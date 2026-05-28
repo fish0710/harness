@@ -190,6 +190,20 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         };
         sessionStorage.setItem(`openclaw_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 
+        // Start the conversation immediately instead of waiting for navigation
+        try {
+          const displayMessage = buildDisplayMessage(input, files, finalWorkspace);
+          await ipcBridge.openclawConversation.sendMessage.invoke({
+            input: displayMessage,
+            conversation_id: conversation.id,
+            files: files.length > 0 ? files : undefined,
+          });
+          sessionStorage.removeItem(`openclaw_initial_message_${conversation.id}`);
+        } catch (sendError) {
+          console.error('Failed to send initial message for OpenClaw:', sendError);
+          // sessionStorage item preserved for retry on navigation
+        }
+
         if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -237,6 +251,19 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
           files: files.length > 0 ? files : undefined,
         };
         sessionStorage.setItem(`nanobot_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
+
+        // Start the conversation immediately
+        try {
+          const displayMessage = buildDisplayMessage(input, files, finalWorkspace);
+          await ipcBridge.conversation.sendMessage.invoke({
+            input: displayMessage,
+            conversation_id: conversation.id,
+            files: files.length > 0 ? files : undefined,
+          });
+          sessionStorage.removeItem(`nanobot_initial_message_${conversation.id}`);
+        } catch (sendError) {
+          console.error('Failed to send initial message for Nanobot:', sendError);
+        }
 
         if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
@@ -286,6 +313,19 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
           files: files.length > 0 ? files : undefined,
         };
         sessionStorage.setItem(`aionrs_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
+
+        // Start the conversation immediately
+        try {
+          const displayMessage = buildDisplayMessage(input, files, finalWorkspace);
+          await ipcBridge.conversation.sendMessage.invoke({
+            input: displayMessage,
+            conversation_id: conversation.id,
+            files: files.length > 0 ? files : undefined,
+          });
+          sessionStorage.removeItem(`aionrs_initial_message_${conversation.id}`);
+        } catch (sendError) {
+          console.error('Failed to send initial message for Aionrs:', sendError);
+        }
 
         if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
@@ -370,6 +410,19 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
           files: files.length > 0 ? files : undefined,
         };
         sessionStorage.setItem(`acp_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
+
+        // Start the conversation immediately
+        try {
+          const displayMessage = buildDisplayMessage(input, files, finalWorkspace);
+          await ipcBridge.acpConversation.sendMessage.invoke({
+            input: displayMessage,
+            conversation_id: conversation.id,
+            files: files.length > 0 ? files : undefined,
+          });
+          sessionStorage.removeItem(`acp_initial_message_${conversation.id}`);
+        } catch (sendError) {
+          console.error('Failed to send initial message for ACP:', sendError);
+        }
 
         if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {

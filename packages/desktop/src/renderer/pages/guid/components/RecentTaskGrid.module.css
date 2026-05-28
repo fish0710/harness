@@ -41,7 +41,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
@@ -60,4 +60,54 @@
   font-size: 32px;
   margin-bottom: 12px;
   opacity: 0.4;
+}
+
+/* Pagination: wrapper for grid + nav buttons */
+.gridWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.gridWrapper .grid {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Nav buttons */
+.navBtn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+  padding: 0;
+}
+
+.navPrev {
+  margin-right: -4px;
+}
+
+.navNext {
+  margin-left: -4px;
+}
+
+.navActive:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.navDisabled {
+  opacity: 0;
+  pointer-events: none;
 }

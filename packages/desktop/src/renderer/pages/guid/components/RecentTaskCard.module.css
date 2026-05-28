@@ -132,32 +132,6 @@
   background: rgba(120, 255, 101, 0.08);
 }
 
-.logs {
-  margin-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  padding-top: 14px;
-  max-height: 120px;
-  overflow-y: auto;
-}
-
-.logLine {
-  display: flex;
-  gap: 10px;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.logTime {
-  color: var(--text-disabled);
-  white-space: nowrap;
-}
-
-.logOk {
-  color: var(--brand);
-}
-
 .progress {
   margin-top: 16px;
   height: 4px;
@@ -188,7 +162,6 @@
   }
 }
 
-.collapsed .logs,
 .collapsed .progress {
   display: none;
 }

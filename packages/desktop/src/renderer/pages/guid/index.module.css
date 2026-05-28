@@ -1,7 +1,7 @@
 .guidLayout {
   --assistant-surface-bg: color-mix(in srgb, var(--bg-2) 65%, transparent);
   --assistant-surface-bg-hover: color-mix(in srgb, var(--bg-2) 85%, transparent);
-  width: clamp(var(--app-min-width, 360px), calc(100% - 32px), 800px);
+  width: clamp(var(--app-min-width, 360px), calc(100% - 32px), 960px);
   max-width: 100%;
   padding: 0 16px;
   box-sizing: border-box;

@@ -1,12 +1,12 @@
 import type { TChatConversation } from '@/common/config/storage';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RecentTaskCard from './RecentTaskCard';
 import styles from './RecentTaskGrid.module.css';
 
 const RECENT_WINDOW_MS = 6 * 60 * 60 * 1000; // 6 hours
-const MAX_CARDS = 12;
+const PAGE_SIZE = 12;
 
 interface RecentTaskGridProps {
   expanded: boolean;
@@ -18,16 +18,15 @@ interface RecentTaskGridProps {
 const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onTaskDetail, onTaskStop }) => {
   const { t } = useTranslation();
   const { conversations, isConversationGenerating } = useConversationHistoryContext();
+  const [page, setPage] = useState(0);
 
-  // Collect running + recently-completed conversations
+  // Collect all running + recently-completed conversations (no hard limit)
   const sorted = useMemo(() => {
     const now = Date.now();
     const running: TChatConversation[] = [];
     const completed: TChatConversation[] = [];
 
     for (const conv of conversations) {
-      if (running.length + completed.length >= MAX_CARDS) break;
-
       if (isConversationGenerating(conv.id)) {
         running.push(conv);
       } else {
@@ -41,6 +40,14 @@ const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onT
     completed.sort((a, b) => (b.modified_at ?? 0) - (a.modified_at ?? 0));
     return [...running, ...completed];
   }, [conversations, isConversationGenerating]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageItems = useMemo(() => sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE), [sorted, safePage]);
+
+  const hasPrev = safePage > 0;
+  const hasNext = safePage < totalPages - 1;
 
   return (
     <div className={styles.section}>
@@ -63,16 +70,38 @@ const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onT
       )}
 
       {expanded && sorted.length > 0 && (
-        <div className={styles.grid}>
-          {sorted.map((conv) => (
-            <RecentTaskCard
-              key={conv.id}
-              conversation={conv}
-              isRunning={isConversationGenerating(conv.id)}
-              onDetail={() => onTaskDetail(conv.id)}
-              onStop={() => onTaskStop(conv.id)}
-            />
-          ))}
+        <div className={styles.gridWrapper}>
+          {totalPages > 1 && (
+            <button
+              className={`${styles.navBtn} ${styles.navPrev} ${hasPrev ? styles.navActive : styles.navDisabled}`}
+              onClick={() => hasPrev && setPage(safePage - 1)}
+              disabled={!hasPrev}
+              aria-label='Previous page'
+            >
+              ‹
+            </button>
+          )}
+          <div className={styles.grid}>
+            {pageItems.map((conv) => (
+              <RecentTaskCard
+                key={conv.id}
+                conversation={conv}
+                isRunning={isConversationGenerating(conv.id)}
+                onDetail={() => onTaskDetail(conv.id)}
+                onStop={() => onTaskStop(conv.id)}
+              />
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <button
+              className={`${styles.navBtn} ${styles.navNext} ${hasNext ? styles.navActive : styles.navDisabled}`}
+              onClick={() => hasNext && setPage(safePage + 1)}
+              disabled={!hasNext}
+              aria-label='Next page'
+            >
+              ›
+            </button>
+          )}
         </div>
       )}
     </div>

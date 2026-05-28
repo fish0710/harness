@@ -24,7 +24,6 @@ const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning
   const title = conversation.name || conversation.id.slice(0, 8);
   const timeAgo = isRunning ? '' : formatTimeAgo(conversation.modified_at ?? conversation.created_at);
 
-  // Extract agent info from backend field (ACP conversations) or type field
   const backend =
     (conversation.extra && 'backend' in conversation.extra && (conversation.extra as { backend?: string }).backend) ||
     conversation.type ||
@@ -70,24 +69,10 @@ const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning
         </div>
       </div>
 
-      {/* Running cards get logs + progress */}
       {isRunning && (
-        <>
-          <div className={styles.logs}>
-            <div className={styles.logLine}>
-              <span className={styles.logTime}>running</span>
-              <span>v1.0.0</span>
-              <span className={styles.logOk}>✓</span>
-            </div>
-            <div className={styles.logLine}>
-              <span className={styles.logTime}>streaming</span>
-              <span>...</span>
-            </div>
-          </div>
-          <div className={styles.progress}>
-            <div className={styles.progressBar} />
-          </div>
-        </>
+        <div className={styles.progress}>
+          <div className={styles.progressBar} />
+        </div>
       )}
     </div>
   );

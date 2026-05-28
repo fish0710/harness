@@ -53,6 +53,9 @@ const GuidPage: React.FC = () => {
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
+  // Task grid expand/collapse
+  const [taskGridExpanded, setTaskGridExpanded] = useState(false);
+
   // --- Skills state ---
   const [allSkills, setAllSkills] = useState<Array<{ name: string; description: string; isAuto: boolean }>>([]);
   const [guidDisabledBuiltinSkills, setGuidDisabledBuiltinSkills] = useState<string[] | undefined>(undefined);
@@ -239,10 +242,11 @@ const GuidPage: React.FC = () => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         if (!guidInput.input.trim()) return;
+        setTaskGridExpanded(true);
         send.sendMessageHandler();
       }
     },
-    [mention, guidInput.input, send]
+    [mention, guidInput.input, send, setTaskGridExpanded]
   );
 
   const handleSelectAgentFromPillBar = useCallback(
@@ -376,15 +380,13 @@ const GuidPage: React.FC = () => {
       loading={guidInput.loading}
       isButtonDisabled={send.isButtonDisabled}
       onSend={() => {
+        setTaskGridExpanded(true);
         send.handleSend().catch((error) => {
           console.error('Failed to send message:', error);
         });
       }}
     />
   );
-
-  // Task grid expand/collapse
-  const [taskGridExpanded, setTaskGridExpanded] = useState(true);
 
   // Task detail / stop handlers
   const handleTaskDetail = useCallback(
