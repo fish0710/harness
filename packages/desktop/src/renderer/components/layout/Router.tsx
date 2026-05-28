@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLoader from '@renderer/components/layout/AppLoader';
 import { useAuth } from '@renderer/hooks/context/AuthContext';
-import { TEAM_MODE_ENABLED } from '@/common/config/constants';
+import { TEAM_MODE_ENABLED, HARNESS_MODE } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
 const Guid = React.lazy(() => import('@renderer/pages/guid'));
 const AgentSettings = React.lazy(() => import('@renderer/pages/settings/AgentSettings'));
@@ -56,7 +56,9 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
           <Route
             path='/team/:id'
-            element={TEAM_MODE_ENABLED ? withRouteFallback(TeamIndex) : <Navigate to='/guid' replace />}
+            element={
+              TEAM_MODE_ENABLED && !HARNESS_MODE ? withRouteFallback(TeamIndex) : <Navigate to='/guid' replace />
+            }
           />
           <Route path='/settings/model' element={withRouteFallback(ModeSettings)} />
           <Route path='/settings/assistants' element={withRouteFallback(AssistantSettings)} />
@@ -73,8 +75,14 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route path='/settings/ext/:tabId' element={withRouteFallback(ExtensionSettingsPage)} />
           <Route path='/settings' element={<Navigate to='/settings/model' replace />} />
           <Route path='/test/components' element={withRouteFallback(ComponentsShowcase)} />
-          <Route path='/scheduled' element={withRouteFallback(ScheduledTasksPage)} />
-          <Route path='/scheduled/:job_id' element={withRouteFallback(TaskDetailPage)} />
+          <Route
+            path='/scheduled'
+            element={HARNESS_MODE ? <Navigate to='/guid' replace /> : withRouteFallback(ScheduledTasksPage)}
+          />
+          <Route
+            path='/scheduled/:job_id'
+            element={HARNESS_MODE ? <Navigate to='/guid' replace /> : withRouteFallback(TaskDetailPage)}
+          />
         </Route>
         <Route path='*' element={<Navigate to={status === 'authenticated' ? '/guid' : '/login'} replace />} />
       </Routes>

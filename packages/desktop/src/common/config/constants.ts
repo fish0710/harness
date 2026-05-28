@@ -59,6 +59,7 @@ export const WEBUI_DEFAULT_PORT = (() => {
 })();
 
 export const TEAM_MODE_ENABLED = true;
+export const HARNESS_MODE = true;
 
 // ===== AI Provider 相关常量 =====
 

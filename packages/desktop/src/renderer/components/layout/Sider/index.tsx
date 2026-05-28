@@ -7,6 +7,7 @@ import { useAuth } from '@renderer/hooks/context/AuthContext';
 import { useLayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { blurActiveElement } from '@renderer/utils/ui/focus';
 import { useThemeContext } from '@renderer/hooks/context/ThemeContext';
+import { HARNESS_MODE, TEAM_MODE_ENABLED } from '@/common/config/constants';
 import { useAllCronJobs } from '@renderer/pages/cron/useCronJobs';
 import { useTeamCreatedRedirect } from '@renderer/pages/team/hooks/useTeamCreatedRedirect';
 import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry } from './SiderNav';
@@ -180,13 +181,15 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               onSessionClick={onSessionClick}
             />
             {/* Scheduled tasks nav entry - fixed above scroll */}
-            <SiderScheduledEntry
-              isMobile={isMobile}
-              isActive={pathname === '/scheduled'}
-              collapsed={collapsed}
-              siderTooltipProps={siderTooltipProps}
-              onClick={handleScheduledClick}
-            />
+            {!HARNESS_MODE && (
+              <SiderScheduledEntry
+                isMobile={isMobile}
+                isActive={pathname === '/scheduled'}
+                collapsed={collapsed}
+                siderTooltipProps={siderTooltipProps}
+                onClick={handleScheduledClick}
+              />
+            )}
             {/* Divider between fixed top nav and scrollable content area */}
             <div
               className={classNames(
@@ -201,13 +204,15 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
                   {...workspaceHistoryProps}
                   afterPinnedContent={
                     <>
-                      <TeamSiderSection
-                        collapsed={collapsed}
-                        pathname={pathname}
-                        siderTooltipProps={siderTooltipProps}
-                        onSessionClick={onSessionClick}
-                      />
-                      {!collapsed && (
+                      {TEAM_MODE_ENABLED && !HARNESS_MODE && (
+                        <TeamSiderSection
+                          collapsed={collapsed}
+                          pathname={pathname}
+                          siderTooltipProps={siderTooltipProps}
+                          onSessionClick={onSessionClick}
+                        />
+                      )}
+                      {!HARNESS_MODE && !collapsed && (
                         <CronJobSiderSection jobs={cronJobs} pathname={pathname} onNavigate={handleCronNavigate} />
                       )}
                     </>
