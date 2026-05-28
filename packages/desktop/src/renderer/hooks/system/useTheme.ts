@@ -2,9 +2,10 @@
 import { configService } from '@/common/config/configService';
 import { useCallback, useEffect, useState } from 'react';
 
-export type Theme = 'light' | 'dark';
+// Harness mode — only 'dark' is supported
+export type Theme = 'dark';
 
-const DEFAULT_THEME: Theme = 'light';
+const DEFAULT_THEME: Theme = 'dark';
 const THEME_CACHE_KEY = '__aionui_theme';
 
 const applyThemeToDom = (value: Theme) => {
@@ -15,7 +16,7 @@ const applyThemeToDom = (value: Theme) => {
 const readCachedTheme = (): Theme => {
   try {
     const cached = localStorage.getItem(THEME_CACHE_KEY);
-    if (cached === 'light' || cached === 'dark') return cached;
+    if (cached === 'dark') return cached;
   } catch (_e) {
     /* noop */
   }
@@ -52,31 +53,30 @@ if (typeof window !== 'undefined') {
 const useTheme = (): [Theme, (theme: Theme) => Promise<void>] => {
   const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
 
-  // Apply theme to document
-  const applyTheme = useCallback((newTheme: Theme) => {
-    applyThemeToDom(newTheme);
+  // Apply theme to document (always dark)
+  const applyTheme = useCallback((_newTheme: Theme) => {
+    applyThemeToDom('dark');
     try {
-      localStorage.setItem(THEME_CACHE_KEY, newTheme);
+      localStorage.setItem(THEME_CACHE_KEY, 'dark');
     } catch (_e) {
       /* noop */
     }
   }, []);
 
-  // Set theme with persistence
+  // Set theme — always forces dark
   const setTheme = useCallback(
-    async (newTheme: Theme) => {
+    async (_newTheme: Theme) => {
       try {
-        setThemeState(newTheme);
-        applyTheme(newTheme);
-        await configService.set('theme', newTheme);
+        setThemeState('dark');
+        applyTheme('dark');
+        await configService.set('theme', 'dark');
       } catch (error) {
         console.error('Failed to save theme:', error);
-        // Revert on error
-        setThemeState(theme);
-        applyTheme(theme);
+        setThemeState('dark');
+        applyTheme('dark');
       }
     },
-    [theme, applyTheme]
+    [applyTheme]
   );
 
   // Initialize theme state from the early initialization

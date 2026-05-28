@@ -10,12 +10,12 @@ import { resolveLocaleKey } from '@/common/utils';
 import { useInputFocusRing } from '@/renderer/hooks/chat/useInputFocusRing';
 import { openExternalUrl, resolveExtensionAssetUrl } from '@/renderer/utils/platform';
 import { CUSTOM_AVATAR_IMAGE_MAP } from './constants';
-import AgentPillBar from './components/AgentPillBar';
-import AssistantSelectionArea from './components/AssistantSelectionArea';
-import { AgentPillBarSkeleton } from './components/GuidSkeleton';
 import GuidActionRow from './components/GuidActionRow';
 import GuidInputCard from './components/GuidInputCard';
 import GuidModelSelector from './components/GuidModelSelector';
+import HarnessAgentInlineSelector from './components/HarnessAgentInlineSelector';
+import HarnessInputSection from './components/HarnessInputSection';
+import HarnessTopBar from './components/HarnessTopBar';
 import MentionDropdown, { MentionSelectorBadge } from './components/MentionDropdown';
 import QuickActionButtons from './components/QuickActionButtons';
 import FeedbackReportModal from '@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal';
@@ -57,10 +57,6 @@ const GuidPage: React.FC = () => {
   }, []);
 
   // --- Skills state ---
-  // All available skills (builtin auto-injected + user-imported custom) merged
-  // into one catalog for the action-row menu. Auto-injected skills default to
-  // checked; the rest are opt-in per conversation (or pre-checked when the
-  // active assistant declares them in `enabled_skills`).
   const [allSkills, setAllSkills] = useState<Array<{ name: string; description: string; isAuto: boolean }>>([]);
   const [guidDisabledBuiltinSkills, setGuidDisabledBuiltinSkills] = useState<string[] | undefined>(undefined);
   const [guidEnabledSkills, setGuidEnabledSkills] = useState<string[] | undefined>(undefined);
@@ -95,8 +91,6 @@ const GuidPage: React.FC = () => {
   }, []);
 
   // --- Hooks ---
-  // Only aionrs uses this provider-based model picker now (Gemini runs as a
-  // regular ACP backend with its own model selector).
   const modelSelection = useGuidModelSelection('aionrs');
 
   const navState = location.state as { resetAssistant?: boolean; selectedAgentKey?: string } | null;
@@ -125,7 +119,6 @@ const GuidPage: React.FC = () => {
   });
 
   const send = useGuidSend({
-    // Input state
     input: guidInput.input,
     setInput: guidInput.setInput,
     files: guidInput.files,
@@ -135,7 +128,6 @@ const GuidPage: React.FC = () => {
     setLoading: guidInput.setLoading,
     loading: guidInput.loading,
 
-    // Agent state
     selectedAgent: agentSelection.selectedAgent,
     selectedAgentKey: agentSelection.selectedAgentKey,
     selectedAgentInfo: agentSelection.selectedAgentInfo,
@@ -145,7 +137,6 @@ const GuidPage: React.FC = () => {
     currentAcpCachedModelInfo: agentSelection.currentAcpCachedModelInfo,
     current_model: modelSelection.current_model,
 
-    // Agent helpers
     findAgentByKey: agentSelection.findAgentByKey,
     getEffectiveAgentType: agentSelection.getEffectiveAgentType,
     resolvePresetRulesAndSkills: agentSelection.resolvePresetRulesAndSkills,
@@ -156,23 +147,20 @@ const GuidPage: React.FC = () => {
     currentEffectiveAgentInfo: agentSelection.currentEffectiveAgentInfo,
     isGoogleAuth: modelSelection.isGoogleAuth,
 
-    // Mention state reset
     setMentionOpen: mention.setMentionOpen,
     setMentionQuery: mention.setMentionQuery,
     setMentionSelectorOpen: mention.setMentionSelectorOpen,
     setMentionActiveIndex: mention.setMentionActiveIndex,
 
-    // Navigation
     navigate,
     t,
   });
 
-  // --- Coordinated handlers (depend on multiple hooks) ---
+  // --- Coordinated handlers ---
   const handleInputChange = useCallback(
     (value: string) => {
       guidInput.setInput(value);
       const match = value.match(mention.mentionMatchRegex);
-      // 首页不根据输入 @ 呼起 mention 列表，占位符里的 @agent 仅为提示，选 agent 用顶部栏或下拉手动选
       if (match) {
         mention.setMentionQuery(match[1]);
         mention.setMentionOpen(false);
@@ -256,7 +244,7 @@ const GuidPage: React.FC = () => {
         send.sendMessageHandler();
       }
     },
-    [mention, guidInput.input, send.sendMessageHandler]
+    [mention, guidInput.input, send]
   );
 
   const handleSelectAgentFromPillBar = useCallback(
@@ -276,25 +264,9 @@ const GuidPage: React.FC = () => {
     ]
   );
 
-  const handleSelectAssistant = useCallback(
-    (assistantId: string) => {
-      agentSelection.setSelectedAgentKey(assistantId);
-      mention.setMentionOpen(false);
-      mention.setMentionQuery(null);
-      mention.setMentionSelectorOpen(false);
-      mention.setMentionActiveIndex(0);
-    },
-    [
-      agentSelection.setSelectedAgentKey,
-      mention.setMentionOpen,
-      mention.setMentionQuery,
-      mention.setMentionSelectorOpen,
-      mention.setMentionActiveIndex,
-    ]
-  );
-
   // Typewriter placeholder
   const typewriterPlaceholder = useTypewriterPlaceholder(t('conversation.welcome.placeholder'));
+
   const selectedAssistantRecord = useMemo(() => {
     if (!agentSelection.is_presetAgent || !agentSelection.selectedAgentInfo?.custom_agent_id) return undefined;
     const selectedId = agentSelection.selectedAgentInfo.custom_agent_id;
@@ -314,45 +286,7 @@ const GuidPage: React.FC = () => {
     }
   }, [agentSelection.is_presetAgent, selectedAssistantRecord]);
 
-  const heroTitle = useMemo(() => {
-    if (!agentSelection.is_presetAgent) return t('conversation.welcome.title');
-    const i18nName = selectedAssistantRecord?.name_i18n?.[localeKey];
-    if (i18nName) return i18nName;
-    return mention.selectedAgentLabel || t('conversation.welcome.title');
-  }, [agentSelection.is_presetAgent, selectedAssistantRecord, localeKey, mention.selectedAgentLabel, t]);
-  const selectedAssistantDescription = useMemo(() => {
-    return selectedAssistantRecord?.description_i18n?.[localeKey] || selectedAssistantRecord?.description || '';
-  }, [selectedAssistantRecord, localeKey]);
-  const selectedAssistantAvatar = useMemo(() => {
-    if (!agentSelection.is_presetAgent) return null;
-    const selectedId = agentSelection.selectedAgentInfo?.custom_agent_id;
-    const strippedId = selectedId?.replace(/^builtin-/, '');
-    const candidates = new Set(selectedId && strippedId ? [selectedId, `builtin-${strippedId}`, strippedId] : []);
-    const selectedAssistant = agentSelection.assistants.find((item) => candidates.has(item.id));
-    const avatarValue = selectedAssistant?.avatar?.trim() || agentSelection.selectedAgentInfo?.avatar?.trim();
-    if (!avatarValue) return { kind: 'icon' as const };
-    const mappedAvatar = CUSTOM_AVATAR_IMAGE_MAP[avatarValue];
-    const resolvedAvatar = resolveExtensionAssetUrl(avatarValue);
-    const avatarImage = mappedAvatar || resolvedAvatar;
-    const isImageAvatar = Boolean(
-      avatarImage &&
-      (/\.(svg|png|jpe?g|webp|gif)$/i.test(avatarImage) || /^(https?:|file:\/\/|data:|\/)/i.test(avatarImage))
-    );
-    if (isImageAvatar && avatarImage) {
-      return { kind: 'image' as const, value: avatarImage };
-    }
-    return { kind: 'emoji' as const, value: avatarValue };
-  }, [
-    agentSelection.assistants,
-    agentSelection.is_presetAgent,
-    agentSelection.selectedAgentInfo?.avatar,
-    agentSelection.selectedAgentInfo?.custom_agent_id,
-  ]);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const [canExpandDescription, setCanExpandDescription] = useState(false);
-
-  // Reset guid-local UI state before paint so same-route navigations do not
-  // briefly show the previous draft or preset assistant layout.
+  // Reset guid-local UI state before paint
   useLayoutEffect(() => {
     guidInput.setInput('');
     guidInput.setFiles([]);
@@ -360,156 +294,36 @@ const GuidPage: React.FC = () => {
     if (!(location.state as { workspace?: string } | null)?.workspace) {
       guidInput.setDir('');
     }
-    setIsDescriptionExpanded(false);
   }, [guidInput.setDir, guidInput.setFiles, guidInput.setInput, guidInput.setLoading, location.key, location.state]);
 
-  // Clear resetAssistant from location.state after the hook has consumed it,
-  // so that re-renders don't re-trigger the reset logic.
-  //
-  // Must go through React Router's navigate — raw window.history.replaceState
-  // with `location.pathname` would write the HashRouter virtual path (e.g.
-  // '/guid') into the browser's real URL and strip the leading '#'. On the
-  // next hard reload, the browser would then request '/guid' directly from
-  // the dev server (which has no SPA fallback) and 404.
+  // Clear resetAssistant from location.state
   useEffect(() => {
     if (!resetAssistantRequested && !preselectAgentKey) return;
     navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null });
   }, [resetAssistantRequested, preselectAgentKey, location.pathname, location.search, location.hash, navigate]);
 
-  useEffect(() => {
-    const node = descriptionTextRef.current;
-    if (!node || !agentSelection.is_presetAgent || !selectedAssistantDescription) {
-      setCanExpandDescription(false);
-      return;
-    }
-
-    const checkExpandable = () => {
-      // In line-clamp mode, scrollWidth/scrollHeight can be unreliable in some engines.
-      // Measure the natural multi-line height via an off-screen clone.
-      const clone = node.cloneNode(true) as HTMLDivElement;
-      const computed = window.getComputedStyle(node);
-      clone.style.position = 'absolute';
-      clone.style.visibility = 'hidden';
-      clone.style.pointerEvents = 'none';
-      clone.style.zIndex = '-1';
-      clone.style.left = '-99999px';
-      clone.style.top = '0';
-      clone.style.width = `${node.clientWidth}px`;
-      clone.style.display = 'block';
-      clone.style.overflow = 'visible';
-      clone.style.whiteSpace = 'normal';
-      clone.style.webkitLineClamp = 'unset';
-      clone.style.webkitBoxOrient = 'unset';
-      clone.style.lineHeight = computed.lineHeight;
-      clone.style.fontSize = computed.fontSize;
-      clone.style.fontWeight = computed.fontWeight;
-      clone.style.letterSpacing = computed.letterSpacing;
-      clone.style.fontFamily = computed.fontFamily;
-      document.body.appendChild(clone);
-
-      const expandedHeight = clone.scrollHeight;
-      document.body.removeChild(clone);
-      const lineHeight = Number.parseFloat(computed.lineHeight) || 20;
-      const canExpand = expandedHeight > lineHeight + 1;
-      setCanExpandDescription(canExpand);
-      if (!canExpand) {
-        setIsDescriptionExpanded(false);
-      }
-    };
-
-    checkExpandable();
-
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => checkExpandable());
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [agentSelection.is_presetAgent, selectedAssistantDescription]);
-
-  const currentPresetAgentType = selectedAssistantRecord?.preset_agent_type || 'gemini';
-  // Mirrors AssistantEditDrawer's Main Agent options — detected execution
-  // engines from AgentPillBar's data source, so avatars resolve the same way.
-  const agentSwitcherItems = useMemo(() => {
+  // Build agent selector options for the inline dropdown
+  const agentSelectorOptions = useMemo(() => {
     if (!agentSelection.availableAgents) return [];
     return agentSelection.availableAgents
-      .filter((a) => !a.is_preset && a.agent_type !== 'remote')
+      .filter((a) => !a.is_preset)
       .map((a) => {
-        const key = a.backend || a.agent_type;
-        const extensionAvatar = a.isExtension ? resolveExtensionAssetUrl(a.avatar) : undefined;
-        const logo =
-          extensionAvatar ||
-          resolveAgentLogo({
-            icon: a.icon,
-            backend: a.backend || a.agent_type,
-            custom_agent_id: a.custom_agent_id,
-            isExtension: a.isExtension,
-          });
-        return {
-          key,
-          label: a.name,
-          logo,
-          isCurrent: key === currentPresetAgentType,
+        const key = agentSelection.getAgentKey(a);
+        const logo = resolveAgentLogo({
+          icon: a.icon,
+          backend: a.backend || a.agent_type,
+          custom_agent_id: a.custom_agent_id,
           isExtension: a.isExtension,
-        };
+        });
+        return { key, label: a.name, logo };
       });
-  }, [agentSelection.availableAgents, currentPresetAgentType]);
+  }, [agentSelection.availableAgents, agentSelection.getAgentKey]);
 
-  const effectiveAgentRecord = useMemo(() => {
-    return agentSelection.availableAgents?.find(
-      (agent) =>
-        !agent.is_preset && (agent.backend || agent.agent_type) === agentSelection.currentEffectiveAgentInfo.agent_type
-    );
-  }, [agentSelection.availableAgents, agentSelection.currentEffectiveAgentInfo.agent_type]);
-
-  const effectiveAgentLogo = useMemo(
-    () =>
-      resolveAgentLogo({
-        icon: effectiveAgentRecord?.icon,
-        backend: effectiveAgentRecord?.backend || agentSelection.currentEffectiveAgentInfo.agent_type,
-        custom_agent_id: effectiveAgentRecord?.custom_agent_id,
-        isExtension: effectiveAgentRecord?.isExtension,
-      }),
-    [effectiveAgentRecord, agentSelection.currentEffectiveAgentInfo.agent_type]
-  );
-  const handlePresetAgentTypeSwitch = useCallback(
-    async (nextType: string) => {
-      // Only preset assistants (is_preset=true) expose `custom_agent_id` here, so this id is
-      // always backed by the `/api/assistants` store. ACP custom agents are a separate store
-      // (`ipcBridge.acpConversation.updateCustomAgent`) and do not carry `preset_agent_type`.
-      // See commit 13858579d on main for the legacy single-store fix that this split already covers.
-      const assistantId = agentSelection.selectedAgentInfo?.custom_agent_id;
-      if (!assistantId || nextType === currentPresetAgentType) return;
-      try {
-        // Optimistically patch the shared `assistants.list` SWR cache so the hero
-        // avatar/logo reflect the new preset_agent_type on the same frame as the
-        // click. Without this, downstream memos (selectedAssistantRecord →
-        // currentEffectiveAgentInfo → effectiveAgentLogo) lag a network roundtrip
-        // behind the user action.
-        await swrMutate(
-          'assistants.list',
-          (prev: Assistant[] | undefined) =>
-            prev?.map((a) => (a.id === assistantId ? { ...a, preset_agent_type: nextType } : a)),
-          { revalidate: false }
-        );
-        await ipcBridge.assistants.update.invoke({ id: assistantId, preset_agent_type: nextType });
-        await Promise.all([swrMutate('assistants.list'), agentSelection.refreshCustomAgents()]);
-        const agent_name =
-          agentSelection.availableAgents?.find((a) => (a.backend || a.agent_type) === nextType)?.name || nextType;
-        Message.success(t('guid.switchedToAgent', { agent: agent_name }));
-      } catch (error) {
-        console.error('[GuidPage] Failed to switch preset agent type:', error);
-        Message.error(t('common.failed', { defaultValue: 'Failed' }));
-      }
-    },
-    [agentSelection, currentPresetAgentType, t]
-  );
-
-  // Resolve the effective agent type once — covers both direct selection and preset assistants
+  // Resolve effective agent type
   const effectiveAgentType = agentSelection.is_presetAgent
     ? agentSelection.currentEffectiveAgentInfo.agent_type
     : agentSelection.selectedAgent;
 
-  // Agents that use configured model providers instead of ACP probe-based models.
-  // Only aionrs now — Gemini runs as a regular ACP backend with ACP-cached models.
   const PROVIDER_BASED_AGENTS = new Set(['aionrs']);
   const isGeminiMode =
     PROVIDER_BASED_AGENTS.has(effectiveAgentType) &&
@@ -553,11 +367,9 @@ const GuidPage: React.FC = () => {
       assistants={agentSelection.assistants}
       localeKey={localeKey}
       onClosePresetTag={() => agentSelection.setSelectedAgentKey(agentSelection.defaultAgentKey)}
-      agentLogo={effectiveAgentLogo}
-      agentSwitcherItems={agentSwitcherItems}
-      onAgentSwitch={(key) => {
-        handlePresetAgentTypeSwitch(key).catch((err) => console.error('Failed to switch agent type:', err));
-      }}
+      agentLogo={undefined}
+      agentSwitcherItems={[]}
+      onAgentSwitch={() => {}}
       allSkills={allSkills}
       disabledBuiltinSkills={guidDisabledBuiltinSkills ?? []}
       enabledSkills={guidEnabledSkills ?? []}
@@ -577,207 +389,56 @@ const GuidPage: React.FC = () => {
     <ConfigProvider getPopupContainer={() => guidContainerRef.current || document.body}>
       <div ref={guidContainerRef} className={styles.guidContainer}>
         <div className={styles.guidLayout}>
-          <div className={styles.heroHeader}>
-            {agentSelection.is_presetAgent ? (
-              <div className={styles.heroHeaderControls}>
-                <div className={styles.heroHeaderLeft}>
-                  <Button
-                    size='mini'
-                    type='text'
-                    shape='circle'
-                    icon={<Left theme='outline' size={18} fill='currentColor' />}
-                    className={styles.heroBackButton}
-                    onClick={() => {
-                      agentSelection.setSelectedAgentKey(agentSelection.defaultAgentKey);
-                      guidInput.setInput('');
-                      setIsDescriptionExpanded(false);
-                    }}
-                    aria-label={t('common.back')}
-                  />
-                  <p className={`${styles.heroTitle} text-2xl font-semibold mb-0 text-0`}>
-                    <span className={styles.heroTitleInlineIcon} aria-hidden='true'>
-                      {selectedAssistantAvatar?.kind === 'image' ? (
-                        <img
-                          src={selectedAssistantAvatar.value}
-                          alt=''
-                          width={28}
-                          height={28}
-                          style={{ objectFit: 'contain' }}
-                        />
-                      ) : selectedAssistantAvatar?.kind === 'emoji' ? (
-                        <span className={styles.heroTitleEmoji}>{selectedAssistantAvatar.value}</span>
-                      ) : (
-                        <Robot theme='outline' size={26} fill='currentColor' />
-                      )}
-                    </span>
-                    <span>{heroTitle}</span>
-                  </p>
-                  <Button
-                    size='mini'
-                    type='text'
-                    icon={<Write theme='outline' size={16} fill='currentColor' />}
-                    className={styles.heroTitleEdit}
-                    onClick={() => openAssistantDetailsRef.current?.()}
-                    aria-label={t('settings.editAssistant', { defaultValue: 'Assistant Details' })}
-                  />
-                </div>
-                <div className={styles.heroHeaderRight}>
-                  <Dropdown
-                    trigger='click'
-                    position='bl'
-                    droplist={
-                      <Menu
-                        onClickMenuItem={(key) => {
-                          handlePresetAgentTypeSwitch(String(key)).catch((err) =>
-                            console.error('Failed to switch agent type:', err)
-                          );
-                        }}
-                      >
-                        {agentSwitcherItems.map((item) => (
-                          <Menu.Item key={item.key}>
-                            <div className='flex items-center justify-between gap-12px min-w-120px'>
-                              <span className='flex items-center gap-6px'>
-                                {item.logo ? (
-                                  <img
-                                    src={item.logo}
-                                    alt=''
-                                    width={16}
-                                    height={16}
-                                    style={{ objectFit: 'contain', flexShrink: 0 }}
-                                  />
-                                ) : (
-                                  <Robot theme='outline' size={16} fill='currentColor' style={{ flexShrink: 0 }} />
-                                )}
-                                {item.label}
-                                {item.isExtension ? (
-                                  <span className='text-11px px-4px py-1px rd-4px bg-[rgb(var(--arcoblue-1))] text-[rgb(var(--arcoblue-6))]'>
-                                    ext
-                                  </span>
-                                ) : null}
-                              </span>
-                              {item.isCurrent ? <span>✓</span> : null}
-                            </div>
-                          </Menu.Item>
-                        ))}
-                      </Menu>
-                    }
-                  >
-                    <Button size='mini' type='text' className={styles.heroAgentSwitchButton}>
-                      <span className='inline-flex items-center gap-4px'>
-                        {effectiveAgentLogo ? (
-                          <img
-                            src={effectiveAgentLogo}
-                            alt=''
-                            width={20}
-                            height={20}
-                            className={styles.heroAgentSwitchIcon}
-                          />
-                        ) : (
-                          <Robot theme='outline' size={20} fill='currentColor' />
-                        )}
-                        <Down theme='outline' size={16} fill='currentColor' />
-                      </span>
-                    </Button>
-                  </Dropdown>
-                </div>
-              </div>
-            ) : (
-              <p className='text-2xl font-semibold mb-0 text-0 text-center'>{heroTitle}</p>
-            )}
-          </div>
+          {/* Harness Top Bar */}
+          <HarnessTopBar activeCount={0} />
 
-          {agentSelection.is_presetAgent && selectedAssistantDescription ? (
-            <div
-              className={`${styles.heroSubtitle} ${isDescriptionExpanded ? styles.heroSubtitleExpanded : ''}`}
-              onClick={() => {
-                if (!canExpandDescription) return;
-                setIsDescriptionExpanded((v) => !v);
-              }}
-            >
-              <div
-                ref={descriptionTextRef}
-                className={`${styles.heroSubtitleText} ${isDescriptionExpanded ? styles.heroSubtitleTextExpanded : ''}`}
-              >
-                {selectedAssistantDescription}
-              </div>
-              {canExpandDescription ? (
-                <Button
-                  size='mini'
-                  type='secondary'
-                  shape='circle'
-                  icon={<Down theme='outline' size={12} fill='currentColor' />}
-                  className={`${styles.heroSubtitleToggle} ${isDescriptionExpanded ? styles.heroSubtitleToggleExpanded : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsDescriptionExpanded((v) => !v);
-                  }}
-                  aria-label={
-                    isDescriptionExpanded
-                      ? t('common.collapse', { defaultValue: 'Collapse' })
-                      : t('common.expand', { defaultValue: 'Expand' })
-                  }
-                />
-              ) : null}
-            </div>
-          ) : agentSelection.availableAgents === undefined ? (
-            <AgentPillBarSkeleton />
-          ) : agentSelection.availableAgents.length > 0 ? (
-            <AgentPillBar
-              availableAgents={agentSelection.availableAgents}
-              selectedAgentKey={agentSelection.selectedAgentKey}
-              getAgentKey={agentSelection.getAgentKey}
-              onSelectAgent={handleSelectAgentFromPillBar}
-              suppressSelectionAnimation={resetAssistantRequested}
-            />
-          ) : null}
+          {/* Agent Inline Selector */}
+          <HarnessAgentInlineSelector
+            agents={agentSelectorOptions}
+            selectedKey={agentSelection.selectedAgentKey}
+            onSelect={agentSelection.setSelectedAgentKey}
+          />
 
-          <GuidInputCard
-            input={guidInput.input}
-            onInputChange={handleInputChange}
-            onKeyDown={handleInputKeyDown}
-            onPaste={guidInput.onPaste}
-            onFocus={guidInput.handleTextareaFocus}
-            onBlur={guidInput.handleTextareaBlur}
-            placeholder={`${mention.selectedAgentLabel}, ${typewriterPlaceholder || t('conversation.welcome.placeholder')}`}
-            isInputActive={guidInput.isInputFocused}
-            isFileDragging={guidInput.isFileDragging}
-            activeBorderColor={activeBorderColor}
-            inactiveBorderColor={inactiveBorderColor}
-            activeShadow={activeShadow}
-            dragHandlers={guidInput.dragHandlers}
-            mentionOpen={mention.mentionOpen}
-            mentionSelectorBadge={
-              <MentionSelectorBadge
-                visible={mention.mentionSelectorVisible}
-                open={mention.mentionSelectorOpen}
-                onOpenChange={mention.setMentionSelectorOpen}
-                agentLabel={mention.selectedAgentLabel}
-                mentionMenu={mentionDropdownNode}
-                onResetQuery={() => mention.setMentionQuery(null)}
+          {/* Input Section */}
+          <HarnessInputSection isActive={guidInput.isInputFocused}>
+            <div className={styles.guidInputCard}>
+              <GuidInputCard
+                input={guidInput.input}
+                onInputChange={handleInputChange}
+                onKeyDown={handleInputKeyDown}
+                onPaste={guidInput.onPaste}
+                onFocus={guidInput.handleTextareaFocus}
+                onBlur={guidInput.handleTextareaBlur}
+                placeholder={`${mention.selectedAgentLabel}, ${typewriterPlaceholder || t('conversation.welcome.placeholder')}`}
+                isInputActive={guidInput.isInputFocused}
+                isFileDragging={guidInput.isFileDragging}
+                activeBorderColor={activeBorderColor}
+                inactiveBorderColor={inactiveBorderColor}
+                activeShadow={activeShadow}
+                dragHandlers={guidInput.dragHandlers}
+                mentionOpen={mention.mentionOpen}
+                mentionSelectorBadge={
+                  <MentionSelectorBadge
+                    visible={mention.mentionSelectorVisible}
+                    open={mention.mentionSelectorOpen}
+                    onOpenChange={mention.setMentionSelectorOpen}
+                    agentLabel={mention.selectedAgentLabel}
+                    mentionMenu={mentionDropdownNode}
+                    onResetQuery={() => mention.setMentionQuery(null)}
+                  />
+                }
+                mentionDropdown={mentionDropdownNode}
+                files={guidInput.files}
+                onRemoveFile={guidInput.handleRemoveFile}
+                actionRow={actionRowNode}
+                workspaceDir={guidInput.dir}
+                onSelectWorkspace={(dir) => guidInput.setDir(dir)}
+                onClearWorkspace={() => guidInput.setDir('')}
               />
-            }
-            mentionDropdown={mentionDropdownNode}
-            files={guidInput.files}
-            onRemoveFile={guidInput.handleRemoveFile}
-            actionRow={actionRowNode}
-            workspaceDir={guidInput.dir}
-            onSelectWorkspace={(dir) => guidInput.setDir(dir)}
-            onClearWorkspace={() => guidInput.setDir('')}
-          />
+            </div>
+          </HarnessInputSection>
 
-          <AssistantSelectionArea
-            is_presetAgent={agentSelection.is_presetAgent}
-            selectedAgentInfo={agentSelection.selectedAgentInfo}
-            assistants={agentSelection.assistants}
-            localeKey={localeKey}
-            currentEffectiveAgentInfo={agentSelection.currentEffectiveAgentInfo}
-            onSelectAssistant={handleSelectAssistant}
-            onSetInput={guidInput.setInput}
-            onFocusInput={guidInput.handleTextareaFocus}
-            onRegisterOpenDetails={(openDetails) => {
-              openAssistantDetailsRef.current = openDetails;
-            }}
-          />
+          {/* Placeholder for RecentTaskGrid — PR2 */}
         </div>
 
         <QuickActionButtons
