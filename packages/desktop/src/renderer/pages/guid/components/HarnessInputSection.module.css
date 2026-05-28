@@ -1,0 +1,56 @@
+.inputSection {
+  margin-bottom: 40px;
+  width: 100%;
+}
+
+.inputWrapper {
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(120, 255, 101, 0.15);
+  background: rgba(255, 255, 255, 0.015);
+  padding: 0;
+  transition: all 0.3s;
+  overflow: hidden;
+  position: relative;
+}
+
+.inputWrapper::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 21px;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(120, 255, 101, 0.12) 0%, rgba(120, 255, 101, 0.02) 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.inputWrapper:hover {
+  border-color: rgba(120, 255, 101, 0.4);
+  box-shadow: 0 0 30px rgba(120, 255, 101, 0.06);
+}
+
+.inputWrapper:hover::before {
+  opacity: 1;
+}
+
+.inputFocused {
+  border-color: var(--brand) !important;
+  box-shadow:
+    0 0 0 1px var(--brand),
+    0 0 25px rgba(120, 255, 101, 0.08) !important;
+}
+
+.inputFocused::before {
+  opacity: 1;
+}
+
+.inner {
+  padding: 2px;
+}

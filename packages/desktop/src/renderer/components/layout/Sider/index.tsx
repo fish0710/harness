@@ -99,7 +99,8 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
   };
 
   const handleQuickThemeToggle = () => {
-    void setTheme(theme === 'dark' ? 'light' : 'dark');
+    // Harness mode: only dark is supported
+    void setTheme('dark');
   };
 
   const handleLogout = useCallback(async () => {

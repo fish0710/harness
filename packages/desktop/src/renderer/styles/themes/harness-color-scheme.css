@@ -1,0 +1,102 @@
+/* Harness Color Scheme - Dark Green / Black Theme */
+
+/* Dark mode only - html prefix ensures specificity > Arco's inline [data-theme='dark'] */
+:root[data-color-scheme='harness'],
+:root[data-color-scheme='harness'][data-theme='dark'] {
+  /* Harness Brand Colors */
+  --aou-1: #0f1a0f;
+  --aou-2: #142214;
+  --aou-3: #1a2e1a;
+  --aou-4: #1f3a1f;
+  --aou-5: #2a4a2a;
+  --aou-6: #3a6a3a;
+  --aou-7: #5a9a5a;
+  --aou-8: #78ff65;
+  --aou-9: #a3ff94;
+  --aou-10: #d4ffcc;
+
+  /* Background Colors */
+  --bg-base: #050505; /* 主背景 */
+  --bg-1: #0c0c0c; /* 次级背景 (panel) */
+  --bg-2: #101010; /* 三级背景 */
+  --bg-3: #1f1f1f; /* 边框/分隔 */
+  --bg-4: #2a2a2a;
+  --bg-5: #353535;
+  --bg-6: #4a4a4a;
+  --bg-8: #737373;
+  --bg-9: #a6a6a6;
+  --bg-10: #d9d9d9;
+
+  /* Interactive State Colors */
+  --bg-hover: #181818; /* 悬停背景 */
+  --bg-active: #222222; /* 激活/按下背景 */
+
+  /* Text Colors */
+  --text-primary: #f5f5f5;
+  --color-text-1: #f5f5f5;
+  --text-secondary: #7b7b7b;
+  --text-disabled: #4a4a4a;
+
+  /* Semantic Colors */
+  --primary: #78ff65;
+  --success: #4cff50;
+  --warning: #ff9a2e;
+  --danger: #f76560;
+  --info: #78ff65;
+
+  /* Border Colors */
+  --border-base: #1f1f1f;
+  --border-light: #151515;
+
+  /* Brand Colors */
+  --brand: #78ff65;
+  --brand-light: rgba(120, 255, 101, 0.08);
+  --brand-hover: rgba(120, 255, 101, 0.16);
+
+  /* Message & UI Component Colors */
+  --message-user-bg: rgba(120, 255, 101, 0.08);
+  --message-tips-bg: rgba(120, 255, 101, 0.04);
+  --workspace-btn-bg: #181818;
+
+  /* Special Colors */
+  --fill: #0c0c0c;
+  --inverse: #ffffff;
+
+  /* Custom Colors */
+  --dialog-fill-0: #0c0c0c;
+  --text-0: #f5f5f5;
+  --color-text-0: #f5f5f5;
+  --text-white: #ffffff;
+  --fill-0: rgba(255, 255, 255, 0.06);
+  --fill-white-to-black: #000000;
+  --border-special: #2a2a2a;
+  --color-guid-agent-bar: #142214;
+
+  /* Arco Design dark mode overrides */
+  --color-bg-1: #050505;
+  --color-bg-2: #0c0c0c;
+  --color-bg-3: #101010;
+  --color-bg-4: #1a1a1a;
+  --color-bg-5: #222222;
+  --color-fill-1: #181818;
+  --color-fill-2: #222222;
+  --color-fill-3: #2a2a2a;
+  --color-fill-4: #333333;
+  --color-border-1: #1a1a1a;
+  --color-border-2: #1f1f1f;
+  --color-border-3: #2a2a2a;
+  --color-border-4: #333333;
+  --color-text-2: #9b9b9b;
+  --color-text-3: #7b7b7b;
+  --color-text-4: #5a5a5a;
+  --color-primary-light-1: rgba(120, 255, 101, 0.08);
+  --color-primary-light-2: rgba(120, 255, 101, 0.12);
+  --color-primary-light-3: rgba(120, 255, 101, 0.2);
+  --color-primary-light-4: rgba(120, 255, 101, 0.3);
+  --color-white: #f5f5f5;
+  --color-black: #050505;
+  --color-bg-popup: #0c0c0c;
+
+  /* Dialog-specific overrides */
+  --dialog-fill-0: #0c0c0c;
+}

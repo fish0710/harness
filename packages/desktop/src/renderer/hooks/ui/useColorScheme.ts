@@ -4,24 +4,58 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// hooks/useColorScheme.ts - Color Scheme Management Hook 配色方案管理
+// hooks/useColorScheme.ts - Color Scheme Management Hook
 import { configService } from '@/common/config/configService';
 import { useCallback, useEffect, useState } from 'react';
 
-// Supported color schemes 支持的配色方案类型
-export type ColorScheme = 'default';
+// Harness mode — only 'harness' scheme is supported
+export type ColorScheme = 'harness';
 
-const DEFAULT_COLOR_SCHEME: ColorScheme = 'default';
+const DEFAULT_COLOR_SCHEME: ColorScheme = 'harness';
 const COLOR_SCHEME_CACHE_KEY = '__aionui_colorScheme';
+
+/** Harness brand CSS variable values — used to override Arco's !important inline CSS. */
+const HARNESS_VARS: Record<string, string> = {
+  '--brand': '#78ff65',
+  '--brand-light': 'rgba(120, 255, 101, 0.08)',
+  '--brand-hover': 'rgba(120, 255, 101, 0.16)',
+  '--bg-base': '#050505',
+  '--bg-hover': '#181818',
+  '--bg-active': '#222222',
+  '--text-primary': '#f5f5f5',
+  '--color-text-1': '#f5f5f5',
+  '--primary': '#78ff65',
+  '--primary-rgb': '120, 255, 101',
+  '--color-primary': '#78ff65',
+};
+
+/**
+ * Apply harness CSS variables as inline styles on :root.
+ * Uses `setProperty` with `'important'` priority — inline !important
+ * beats stylesheet !important regardless of injection order, so Arco's
+ * dynamic inline CSS cannot override it.
+ */
+const injectHarnessVars = () => {
+  Object.entries(HARNESS_VARS).forEach(([key, val]) => {
+    document.documentElement.style.setProperty(key, val, 'important');
+  });
+};
 
 const applyColorSchemeToDom = (value: ColorScheme) => {
   document.documentElement.setAttribute('data-color-scheme', value);
+  // Force-apply harness CSS vars to beat Arco's dynamic !important inline CSS.
+  // Inline !important always wins, but Arco may inject AFTER this call, so
+  // we re-apply at staggered intervals to reclaim priority.
+  injectHarnessVars();
+  setTimeout(injectHarnessVars, 10);
+  setTimeout(injectHarnessVars, 100);
+  setTimeout(injectHarnessVars, 500);
 };
 
 const readCachedColorScheme = (): ColorScheme => {
   try {
     const cached = localStorage.getItem(COLOR_SCHEME_CACHE_KEY);
-    if (cached === 'default') return cached;
+    if (cached === 'harness') return cached;
   } catch (_e) {
     /* noop */
   }
@@ -51,23 +85,19 @@ const initColorScheme = async (): Promise<ColorScheme> => {
   }
 };
 
-// Run color scheme initialization immediately 立即运行配色方案初始化
+// Run color scheme initialization immediately
 let initialColorSchemePromise: Promise<ColorScheme> | null = null;
 if (typeof window !== 'undefined') {
   initialColorSchemePromise = initColorScheme();
 }
 
 /**
- * Color scheme management hook 配色方案管理 Hook
- * @returns [colorScheme, setColorScheme] - Current color scheme and setter function 当前配色方案和设置函数
+ * Color scheme management hook.
+ * Always returns 'harness' — the platform only supports one scheme.
  */
 const useColorScheme = (): [ColorScheme, (scheme: ColorScheme) => Promise<void>] => {
   const [colorScheme, setColorSchemeState] = useState<ColorScheme>(DEFAULT_COLOR_SCHEME);
 
-  /**
-   * Apply color scheme to DOM 应用配色方案到 DOM
-   * Switch CSS variables by setting data-color-scheme attribute 通过设置 data-color-scheme 属性切换 CSS 变量
-   */
   const applyColorScheme = useCallback((newScheme: ColorScheme) => {
     applyColorSchemeToDom(newScheme);
     try {
@@ -77,10 +107,6 @@ const useColorScheme = (): [ColorScheme, (scheme: ColorScheme) => Promise<void>]
     }
   }, []);
 
-  /**
-   * Set color scheme with persistence 设置配色方案并持久化
-   * Updates state, DOM attribute and local storage 同时更新状态、DOM 属性和本地存储
-   */
   const setColorScheme = useCallback(
     async (newScheme: ColorScheme) => {
       try {
@@ -89,7 +115,6 @@ const useColorScheme = (): [ColorScheme, (scheme: ColorScheme) => Promise<void>]
         await configService.set('colorScheme', newScheme);
       } catch (error) {
         console.error('Failed to save color scheme:', error);
-        // Revert on error 保存失败时回滚
         setColorSchemeState(colorScheme);
         applyColorScheme(colorScheme);
       }
@@ -97,10 +122,6 @@ const useColorScheme = (): [ColorScheme, (scheme: ColorScheme) => Promise<void>]
     [colorScheme, applyColorScheme]
   );
 
-  /**
-   * Initialize color scheme state from early initialization
-   * 从早期初始化中读取配色方案状态，确保组件挂载时获取正确的值
-   */
   useEffect(() => {
     if (initialColorSchemePromise) {
       initialColorSchemePromise

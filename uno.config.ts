@@ -154,6 +154,9 @@ export default defineConfig({
     ['bg-fill-white-to-black', { 'background-color': 'var(--fill-white-to-black)' }],
     ['border-special', { 'border-color': 'var(--border-special)' }],
 
+    // Harness Brand utility: logo / status / accent text
+    ['font-mono', { 'font-family': "'JetBrains Mono', monospace" }],
+
     // Wiggle animation for attention indicators (e.g. pending permission badge)
     // Shakes briefly then pauses — 3s cycle, active in first ~20%
     ['animate-wiggle', { animation: 'wiggle 3s ease-in-out infinite' }],
@@ -179,6 +182,9 @@ export default defineConfig({
   // 基础配置
   shortcuts: {
     'flex-center': 'flex items-center justify-center',
+    'bg-brand-soft': 'bg-[rgba(120,255,101,0.08)]',
+    'shadow-brand-glow': 'shadow-[0_0_25px_rgba(120,255,101,0.08)]',
+    'border-brand': 'border-[var(--brand)]',
   },
   theme: {
     colors: {
