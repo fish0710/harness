@@ -1,6 +1,6 @@
 {
   "agentFallbackNotice": "{{original}} недоступен, используется {{fallback}}.",
-  "noAgentAvailable": "Нет доступного основного агента. Войдите в Google или установите Claude/Codex CLI. Перейти к настройкам?",
+  "noAgentAvailable": "Нет доступного основного агента. Войдите в Google или установите ACP CLI. Перейти к настройкам?",
   "noAgentAvailableShort": "Основной агент недоступен. Нажмите для настройки.",
   "agentTabAutoSwitch": "Модель несовместима с Gemini, автоматическое переключение на {{fallback}}",
   "autoSwitchToAgent": "Gemini не настроен, автоматическое переключение на {{agent}}",

@@ -1,6 +1,6 @@
 {
   "agentFallbackNotice": "{{original}} is unavailable, using {{fallback}} instead.",
-  "noAgentAvailable": "No Main Agent is available. Please login to Google or install Claude/Codex CLI. Go to settings?",
+  "noAgentAvailable": "No Main Agent is available. Please login to Google or install ACP CLI. Go to settings?",
   "noAgentAvailableShort": "No Main Agent available. Click to configure.",
   "agentTabAutoSwitch": "Model not compatible with Gemini, auto-switched to {{fallback}}",
   "autoSwitchToAgent": "Gemini is not configured, auto-switching to {{agent}}",

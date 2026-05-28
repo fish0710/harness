@@ -1,6 +1,6 @@
 {
   "agentFallbackNotice": "{{original}} is unavailable, using {{fallback}} instead.",
-  "noAgentAvailable": "目前沒有可用的主代理。請登入 Google 或安裝 Claude/Codex CLI。要前往設定嗎？",
+  "noAgentAvailable": "目前沒有可用的主代理。請登入 Google 或安裝 ACP CLI。要前往設定嗎？",
   "noAgentAvailableShort": "No Main Agent available. Click to configure.",
   "agentTabAutoSwitch": "Model not compatible with Gemini, auto-switched to {{fallback}}",
   "autoSwitchToAgent": "Gemini is not configured, auto-switching to {{agent}}",

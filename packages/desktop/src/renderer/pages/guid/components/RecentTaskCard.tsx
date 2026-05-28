@@ -27,7 +27,7 @@ const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning
   const backend =
     (conversation.extra && 'backend' in conversation.extra && (conversation.extra as { backend?: string }).backend) ||
     conversation.type ||
-    'claude';
+    '';
 
   return (
     <div className={styles.card}>

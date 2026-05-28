@@ -23,7 +23,7 @@
         "• Switch network environment (like mobile hotspot)",
         "• Wait 10-30 minutes and retry",
         "• Clear browser cache and cookies",
-        "• Switch to other available services: ChatGPT, Claude, Qwen, Gemini"
+        "• Switch to other available services: ChatGPT, Qwen, Gemini"
       ],
       "network_timeout": [
         "• Check if network connection is stable",

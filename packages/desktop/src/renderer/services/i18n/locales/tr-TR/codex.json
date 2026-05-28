@@ -23,7 +23,7 @@
         "• Ağ ortamını değiştirin (mobil hotspot gibi)",
         "• 10-30 dakika bekleyin ve tekrar deneyin",
         "• Tarayıcı önbelleğini ve çerezleri temizleyin",
-        "• Diğer mevcut servislere geçin: ChatGPT, Claude, Qwen, Gemini"
+        "• Diğer mevcut servislere geçin: ChatGPT, Qwen, Gemini"
       ],
       "network_timeout": [
         "• Ağ bağlantısının kararlı olup olmadığını kontrol edin",

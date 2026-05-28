@@ -11,9 +11,7 @@ import type { ICssTheme } from '@/common/config/storage';
 import PwaPullToRefresh from '@/renderer/components/layout/PwaPullToRefresh';
 import Titlebar from '@/renderer/components/layout/Titlebar';
 import { Layout as ArcoLayout } from '@arco-design/web-react';
-import classNames from 'classnames';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutContext } from '@renderer/hooks/context/LayoutContext';
 import { NavigationHistoryProvider } from '@renderer/hooks/context/NavigationHistoryContext';
@@ -21,31 +19,9 @@ import { useDeepLink } from '@renderer/hooks/system/useDeepLink';
 import { useNotificationClick } from '@renderer/hooks/system/useNotificationClick';
 import { useDirectorySelection } from '@renderer/hooks/file/useDirectorySelection';
 import { processCustomCss } from '@renderer/utils/theme/customCssProcessor';
-import { cleanupSiderTooltips } from '@renderer/utils/ui/siderTooltip';
-import { useConversationShortcuts } from '@renderer/hooks/ui/useConversationShortcuts';
 import { isElectronDesktop } from '@renderer/utils/platform';
 import { computeCssSyncDecision, resolveCssByActiveTheme } from '@renderer/utils/theme/themeCssSync';
-import appLogo from '@renderer/assets/logos/brand/app.png';
 import '@renderer/styles/layout.css';
-
-const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 48 48'
-    fill='none'
-    stroke='currentColor'
-    strokeWidth={strokeWidth}
-    strokeLinecap='round'
-    strokeLinejoin='round'
-    aria-hidden='true'
-    focusable='false'
-    style={{ display: 'inline-block', verticalAlign: 'middle' }}
-  >
-    <rect x='6' y='10' width='36' height='28' rx='5' />
-    <line x1='18' y1='10' x2='18' y2='38' />
-  </svg>
-);
 
 const useDebug = () => {
   const [count, setCount] = useState(0);
@@ -79,14 +55,6 @@ const useDebug = () => {
 
 const UpdateModal = React.lazy(() => import('@/renderer/components/settings/UpdateModal'));
 
-const DEFAULT_SIDER_WIDTH = 260;
-const DESKTOP_COLLAPSED_WIDTH = 0;
-const SIDER_DRAG_SNAP_THRESHOLD = Math.round((DEFAULT_SIDER_WIDTH + DESKTOP_COLLAPSED_WIDTH) / 2);
-const SIDER_DRAG_HYSTERESIS = 6;
-const MOBILE_SIDER_WIDTH_RATIO = 0.67;
-const MOBILE_SIDER_MIN_WIDTH = 260;
-const MOBILE_SIDER_MAX_WIDTH = 420;
-
 const detectMobileViewportOrTouch = (): boolean => {
   if (typeof window === 'undefined') return false;
   if (isElectronDesktop()) {
@@ -94,43 +62,28 @@ const detectMobileViewportOrTouch = (): boolean => {
   }
   const width = window.innerWidth;
   const byWidth = width < 768;
-  // 仅在小屏时才将 coarse/touch 视为移动端，避免触控笔记本被误判
-  // Treat touch/coarse pointer as mobile only on smaller viewports
   const smallScreen = width < 1024;
   const byMedia = window.matchMedia('(hover: none)').matches || window.matchMedia('(pointer: coarse)').matches;
   const byTouchPoints = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
   return byWidth || (smallScreen && (byMedia || byTouchPoints));
 };
 
-const Layout: React.FC<{
-  sider: React.ReactNode;
-  onSessionClick?: () => void;
-}> = ({ sider, onSessionClick: _onSessionClick }) => {
-  const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState(true);
+const Layout: React.FC = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [viewportWidth, setViewportWidth] = useState<number>(() =>
     typeof window === 'undefined' ? 390 : window.innerWidth
   );
   const [customCss, setCustomCss] = useState<string>('');
-  const [shouldMountUpdateModal, setShouldMountUpdateModal] = useState(false);
   const { onClick } = useDebug();
   const { contextHolder: directorySelectionContextHolder } = useDirectorySelection();
   useDeepLink();
   useNotificationClick();
-  const navigate = useNavigate();
-  useConversationShortcuts({ navigate });
   const location = useLocation();
   const workspaceAvailable =
     location.pathname.startsWith('/conversation/') || (TEAM_MODE_ENABLED && location.pathname.startsWith('/team/'));
-  const collapsedRef = useRef(collapsed);
   const lastCssRef = useRef('');
   const lastUiCssUpdateAtRef = useRef(0);
-  const dragStateRef = useRef<{ active: boolean; startX: number; startWidth: number }>({
-    active: false,
-    startX: 0,
-    startWidth: DEFAULT_SIDER_WIDTH,
-  });
+  const [shouldMountUpdateModal, setShouldMountUpdateModal] = useState(false);
 
   const loadAndHealCustomCss = useCallback(async () => {
     try {
@@ -154,12 +107,9 @@ const Layout: React.FC<{
 
       let effectiveCss = decision.effectiveCss;
 
-      // If the active theme resolved to empty CSS and there IS a saved activeThemeId
-      // (but it no longer matches any known theme), fall back to default and persist.
       if (!effectiveCss && activeThemeId && activeThemeId !== 'default-theme') {
         const defaultCss = resolveCssByActiveTheme('default-theme', (savedThemes || []) as ICssTheme[]);
         effectiveCss = defaultCss;
-        // Persist the fallback so Layout doesn't keep retrying
         await Promise.all([
           configService.set('css.activeThemeId', 'default-theme'),
           configService.set('customCss', effectiveCss),
@@ -182,7 +132,6 @@ const Layout: React.FC<{
     }
   }, [customCss]);
 
-  // 加载并监听自定义 CSS 配置 / Load & watch custom CSS configuration
   useEffect(() => {
     void loadAndHealCustomCss();
 
@@ -209,12 +158,10 @@ const Layout: React.FC<{
     };
   }, [loadAndHealCustomCss]);
 
-  // Re-sync theme css on route changes, because some settings pages do not mount CssThemeSettings.
   useEffect(() => {
     void loadAndHealCustomCss();
   }, [location.pathname, location.search, location.hash, loadAndHealCustomCss]);
 
-  // 注入自定义 CSS / Inject custom CSS into document head
   useEffect(() => {
     const styleId = 'user-defined-custom-css';
 
@@ -263,7 +210,6 @@ const Layout: React.FC<{
     };
   }, [customCss]);
 
-  // 检测移动端并响应窗口大小变化
   useEffect(() => {
     const checkMobile = () => {
       const mobile = detectMobileViewportOrTouch();
@@ -271,26 +217,11 @@ const Layout: React.FC<{
       setViewportWidth(window.innerWidth);
     };
 
-    // 初始检测
     checkMobile();
 
-    // 监听窗口大小变化
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // 进入移动端后立即折叠 / Collapse immediately when switching to mobile
-  useEffect(() => {
-    if (!isMobile || collapsedRef.current) {
-      return;
-    }
-    setCollapsed(true);
-  }, [isMobile]);
-
-  // 清理侧栏 Tooltip 残留节点，避免移动端路由切换后浮层卡在左上角
-  useEffect(() => {
-    cleanupSiderTooltips();
-  }, [isMobile, collapsed, location.pathname, location.search, location.hash]);
 
   // Bridge Main Process logs to F12 Console
   useEffect(() => {
@@ -308,227 +239,15 @@ const Layout: React.FC<{
     return () => unsubscribe();
   }, []);
 
-  // Handle tray events from main process / 处理来自主进程的托盘事件
-  useEffect(() => {
-    if (!isElectronDesktop()) return;
-
-    // Navigate to guid page when requested from tray / 托盘请求导航到 guid 页面
-    const handleNavigateToGuid = () => {
-      void navigate('/guid');
-    };
-
-    // Navigate to conversation when requested from tray / 托盘请求导航到对话页面
-    const handleNavigateToConversation = (event: CustomEvent<{ conversation_id: string }>) => {
-      void navigate(`/conversation/${event.detail.conversation_id}`);
-    };
-
-    // Open about dialog when requested from tray / 托盘请求打开关于对话框
-    const handleOpenAbout = () => {
-      // Navigate to settings/about page / 导航到设置/关于页面
-      void navigate('/settings/about');
-    };
-
-    // Handle pause all tasks request from tray / 托盘请求暂停所有任务
-    const handlePauseAllTasks = async () => {
-      const { ipcBridge } = await import('@/common');
-      const result = await ipcBridge.task.stopAll.invoke();
-      if (result?.success) {
-        // Navigate to settings page to show task status
-        void navigate('/settings/system');
-      }
-    };
-
-    // Handle check update request from tray / 托盘请求检查更新
-    // 1. Navigate to about page / 导航到关于页面
-    // 2. Trigger update modal check / 触发更新模态框检查
-    const handleCheckUpdate = () => {
-      void navigate('/settings/about');
-      // Trigger update modal after a short delay to ensure page is loaded
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('aionui-open-update-modal', { detail: { source: 'tray' } }));
-      }, 100);
-    };
-
-    // Listen for tray events / 监听托盘事件
-    window.addEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
-    window.addEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
-    window.addEventListener('tray:open-about', handleOpenAbout as EventListener);
-    window.addEventListener('tray:pause-all-tasks', handlePauseAllTasks as EventListener);
-    window.addEventListener('tray:check-update', handleCheckUpdate as EventListener);
-
-    return () => {
-      window.removeEventListener('tray:navigate-to-guid', handleNavigateToGuid as EventListener);
-      window.removeEventListener('tray:navigate-to-conversation', handleNavigateToConversation as EventListener);
-      window.removeEventListener('tray:open-about', handleOpenAbout as EventListener);
-      window.removeEventListener('tray:pause-all-tasks', handlePauseAllTasks as EventListener);
-      window.removeEventListener('tray:check-update', handleCheckUpdate as EventListener);
-    };
-  }, [navigate]);
-
-  const siderWidth = isMobile
-    ? Math.max(
-        MOBILE_SIDER_MIN_WIDTH,
-        Math.min(MOBILE_SIDER_MAX_WIDTH, Math.round(viewportWidth * MOBILE_SIDER_WIDTH_RATIO))
-      )
-    : DEFAULT_SIDER_WIDTH;
-  useEffect(() => {
-    collapsedRef.current = collapsed;
-  }, [collapsed]);
-
-  const beginSiderResizeDrag = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (isMobile) return;
-      event.preventDefault();
-      dragStateRef.current = {
-        active: true,
-        startX: event.clientX,
-        startWidth: collapsedRef.current ? DESKTOP_COLLAPSED_WIDTH : DEFAULT_SIDER_WIDTH,
-      };
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    },
-    [isMobile]
-  );
-
-  useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
-      const dragState = dragStateRef.current;
-      if (!dragState.active) return;
-
-      const draggedWidth = dragState.startWidth + (event.clientX - dragState.startX);
-      // Add a small hysteresis zone to avoid rapid toggling near the snap threshold.
-      const shouldCollapse = collapsedRef.current
-        ? draggedWidth < SIDER_DRAG_SNAP_THRESHOLD + SIDER_DRAG_HYSTERESIS
-        : draggedWidth <= SIDER_DRAG_SNAP_THRESHOLD - SIDER_DRAG_HYSTERESIS;
-      if (shouldCollapse !== collapsedRef.current) {
-        setCollapsed(shouldCollapse);
-      }
-    };
-
-    const endDrag = () => {
-      if (!dragStateRef.current.active) return;
-      dragStateRef.current.active = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    const handleBlur = () => endDrag();
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', endDrag);
-    window.addEventListener('blur', handleBlur);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', endDrag);
-      window.removeEventListener('blur', handleBlur);
-      endDrag();
-    };
-  }, []);
-
-  const siderStyle = isMobile
-    ? {
-        position: 'fixed' as const,
-        left: 0,
-        zIndex: 100,
-        transform: collapsed ? 'translateX(-100%)' : 'translateX(0)',
-        transition: 'none',
-        pointerEvents: collapsed ? ('none' as const) : ('auto' as const),
-      }
-    : {
-        position: 'relative' as const,
-        overflow: 'visible' as const,
-      };
-
   return (
-    <LayoutContext.Provider value={{ isMobile, siderCollapsed: collapsed, setSiderCollapsed: setCollapsed }}>
+    <LayoutContext.Provider value={{ isMobile }}>
       <NavigationHistoryProvider>
         <div className='app-shell flex flex-col size-full min-h-0'>
           <Titlebar workspaceAvailable={workspaceAvailable} />
-          {/* 移动端左侧边栏蒙板 / Mobile left sider backdrop */}
-          {isMobile && !collapsed && (
-            <div className='fixed inset-0 bg-black/30 z-90' onClick={() => setCollapsed(true)} aria-hidden='true' />
-          )}
-
-          <ArcoLayout className={'size-full layout flex-1 min-h-0'}>
-            <ArcoLayout.Sider
-              collapsedWidth={isMobile ? 0 : 0}
-              collapsed={collapsed}
-              width={siderWidth}
-              className={classNames('!bg-2 layout-sider', {
-                collapsed: collapsed,
-              })}
-              style={siderStyle}
-            >
-              <ArcoLayout.Header
-                className={classNames(
-                  'flex items-center justify-start pt-8px pb-8px pl-18px pr-16px gap-12px layout-sider-header',
-                  isMobile && 'layout-sider-header--mobile',
-                  {
-                    'cursor-pointer group ': collapsed,
-                  }
-                )}
-              >
-                <div
-                  className={classNames('bg-black shrink-0 size-32px relative rd-0.5rem', {
-                    '!size-24px': collapsed,
-                  })}
-                  onClick={onClick}
-                >
-                  <img
-                    src={appLogo}
-                    alt={t('login.brand')}
-                    className='absolute inset-0 size-full select-none object-contain'
-                    draggable={false}
-                  />
-                </div>
-                <div className='text-16px text-t-primary collapsed-hidden font-semibold'>{t('login.brand')}</div>
-                {isMobile && !collapsed && (
-                  <button
-                    type='button'
-                    className='app-titlebar__button app-titlebar__button--mobile'
-                    onClick={() => setCollapsed(true)}
-                    title='Collapse sidebar'
-                    aria-label='Collapse sidebar'
-                  >
-                    <SidebarIcon size={18} strokeWidth={2.5} />
-                  </button>
-                )}
-                {/* 侧栏折叠改由标题栏统一控制 / Sidebar folding handled by Titlebar toggle */}
-              </ArcoLayout.Header>
-              <ArcoLayout.Content className='pt-0 px-8px pb-0 layout-sider-content'>
-                {React.isValidElement(sider)
-                  ? React.cloneElement(sider, {
-                      onSessionClick: () => {
-                        cleanupSiderTooltips();
-                        if (isMobile) setCollapsed(true);
-                      },
-                      collapsed,
-                    } as any)
-                  : sider}
-              </ArcoLayout.Content>
-              {!isMobile && (
-                <div
-                  className='absolute top-0 h-full w-8px z-20 cursor-col-resize group'
-                  style={{ right: '-4px' }}
-                  onMouseDown={beginSiderResizeDrag}
-                  aria-hidden='true'
-                >
-                  <div className='absolute top-0 left-1/2 h-full w-1px -translate-x-1/2 bg-transparent group-hover:bg-[var(--color-border-2)] transition-colors duration-150' />
-                </div>
-              )}
-            </ArcoLayout.Sider>
-
+          <ArcoLayout className='size-full layout flex-1 min-h-0'>
             <ArcoLayout.Content
-              className={'bg-1 layout-content flex flex-col min-h-0'}
-              onClick={() => {
-                if (isMobile && !collapsed) setCollapsed(true);
-              }}
-              style={
-                isMobile
-                  ? {
-                      width: '100%',
-                    }
-                  : undefined
-              }
+              className='bg-1 layout-content flex flex-col min-h-0'
+              style={isMobile ? { width: '100%' } : undefined}
             >
               <Outlet />
               {directorySelectionContextHolder}

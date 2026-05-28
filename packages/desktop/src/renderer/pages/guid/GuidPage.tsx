@@ -13,8 +13,6 @@ import { resolveExtensionAssetUrl } from '@/renderer/utils/platform';
 import { CUSTOM_AVATAR_IMAGE_MAP } from './constants';
 import GuidActionRow from './components/GuidActionRow';
 import GuidInputCard from './components/GuidInputCard';
-import GuidModelSelector from './components/GuidModelSelector';
-import HarnessAgentInlineSelector from './components/HarnessAgentInlineSelector';
 import HarnessInputSection from './components/HarnessInputSection';
 import HarnessTopBar from './components/HarnessTopBar';
 import RecentTaskGrid from './components/RecentTaskGrid';
@@ -26,7 +24,6 @@ import { useGuidMention } from './hooks/useGuidMention';
 import { useGuidModelSelection } from './hooks/useGuidModelSelection';
 import { useGuidSend } from './hooks/useGuidSend';
 import { useTypewriterPlaceholder } from './hooks/useTypewriterPlaceholder';
-import { resolveAgentLogo } from '@/renderer/utils/model/agentLogo';
 import { Button, ConfigProvider, Dropdown, Menu, Message } from '@arco-design/web-react';
 import { Down, Left, Robot, Write } from '@icon-park/react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -304,33 +301,6 @@ const GuidPage: React.FC = () => {
     navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null });
   }, [resetAssistantRequested, preselectAgentKey, location.pathname, location.search, location.hash, navigate]);
 
-  // Build agent selector options for the inline dropdown
-  const agentSelectorOptions = useMemo(() => {
-    if (!agentSelection.availableAgents) return [];
-    return agentSelection.availableAgents
-      .filter((a) => !a.is_preset)
-      .map((a) => {
-        const key = agentSelection.getAgentKey(a);
-        const logo = resolveAgentLogo({
-          icon: a.icon,
-          backend: a.backend || a.agent_type,
-          custom_agent_id: a.custom_agent_id,
-          isExtension: a.isExtension,
-        });
-        return { key, label: a.name, logo };
-      });
-  }, [agentSelection.availableAgents, agentSelection.getAgentKey]);
-
-  // Resolve effective agent type
-  const effectiveAgentType = agentSelection.is_presetAgent
-    ? agentSelection.currentEffectiveAgentInfo.agent_type
-    : agentSelection.selectedAgent;
-
-  const PROVIDER_BASED_AGENTS = new Set(['aionrs']);
-  const isGeminiMode =
-    PROVIDER_BASED_AGENTS.has(effectiveAgentType) &&
-    (!agentSelection.is_presetAgent || agentSelection.currentEffectiveAgentInfo.isAvailable);
-
   // Build the mention dropdown node
   const mentionDropdownNode = (
     <MentionDropdown
@@ -341,25 +311,13 @@ const GuidPage: React.FC = () => {
     />
   );
 
-  // Build the model selector node
-  const modelSelectorNode = (
-    <GuidModelSelector
-      isGeminiMode={isGeminiMode}
-      modelList={modelSelection.modelList}
-      current_model={modelSelection.current_model}
-      setCurrentModel={modelSelection.setCurrentModel}
-      currentAcpCachedModelInfo={agentSelection.currentAcpCachedModelInfo}
-      selectedAcpModel={agentSelection.selectedAcpModel}
-      setSelectedAcpModel={agentSelection.setSelectedAcpModel}
-    />
-  );
-
   // Build the action row
   const actionRowNode = (
     <GuidActionRow
       files={guidInput.files}
       onFilesUploaded={guidInput.handleFilesUploaded}
-      modelSelectorNode={modelSelectorNode}
+      modelSelectorNode={null}
+      hidePermissionSelector
       selectedAgent={agentSelection.selectedAgent}
       effectiveModeAgent={agentSelection.currentEffectiveAgentInfo.agent_type}
       selectedMode={agentSelection.selectedMode}
@@ -410,13 +368,6 @@ const GuidPage: React.FC = () => {
         <div className={styles.guidLayout}>
           {/* Harness Top Bar */}
           <HarnessTopBar activeCount={activeCount} />
-
-          {/* Agent Inline Selector */}
-          <HarnessAgentInlineSelector
-            agents={agentSelectorOptions}
-            selectedKey={agentSelection.selectedAgentKey}
-            onSelect={agentSelection.setSelectedAgentKey}
-          />
 
           {/* Input Section */}
           <HarnessInputSection isActive={guidInput.isInputFocused}>

@@ -46,7 +46,7 @@ type UseAgentReadinessCheckOptions = {
 };
 
 const AGENT_NAMES: Partial<Record<string, string>> = {
-  claude: 'Claude',
+  claude: 'Codex',
   codex: 'Codex',
   codebuddy: 'CodeBuddy',
   opencode: 'OpenCode',

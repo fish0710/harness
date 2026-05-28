@@ -21,7 +21,7 @@ import { resolveBackendAssetUrl } from '@/renderer/utils/platform';
  */
 const AGENT_LOGO_PATH_MAP = {
   aionrs: 'brand/aion.svg',
-  claude: 'ai-major/claude.svg',
+  claude: '',
   gemini: 'ai-major/gemini.svg',
   qwen: 'ai-china/qwen.svg',
   codex: 'tools/coding/codex.svg',

@@ -1,6 +1,6 @@
 {
   "agentFallbackNotice": "{{original}} is unavailable, using {{fallback}} instead.",
-  "noAgentAvailable": "Kullanılabilir bir Ana Ajan yok. Lütfen Google'a giriş yapın veya Claude/Codex CLI kurun. Ayarlara gitmek ister misiniz?",
+  "noAgentAvailable": "Kullanılabilir bir Ana Ajan yok. Lütfen Google'a giriş yapın veya ACP CLI kurun. Ayarlara gitmek ister misiniz?",
   "noAgentAvailableShort": "No Main Agent available. Click to configure.",
   "agentTabAutoSwitch": "Model not compatible with Gemini, auto-switched to {{fallback}}",
   "autoSwitchToAgent": "Gemini is not configured, auto-switching to {{agent}}",

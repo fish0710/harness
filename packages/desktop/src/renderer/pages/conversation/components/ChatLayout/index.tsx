@@ -158,8 +158,6 @@ const ChatLayout: React.FC<{
     workspaceEnabled,
     rightSiderCollapsed,
     setRightSiderCollapsed,
-    siderCollapsed: layout?.siderCollapsed,
-    setSiderCollapsed: layout?.setSiderCollapsed,
   });
 
   // --- Hook E: layout constraints ---

@@ -23,7 +23,7 @@
         "• 更换网络环境（如移动热点）",
         "• 等待 10-30 分钟后重试",
         "• 清除浏览器缓存和 Cookie",
-        "• 切换到其他可用服务：ChatGPT、Claude、Qwen、Gemini"
+        "• 切换到其他可用服务：ChatGPT、Qwen、Gemini"
       ],
       "network_timeout": ["• 检查网络连接是否稳定", "• 重试连接操作", "• 切换到更稳定的网络环境", "• 检查防火墙设置"],
       "connection_refused": [

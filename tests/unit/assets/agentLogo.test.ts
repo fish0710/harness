@@ -38,9 +38,9 @@ describe('agentLogo', () => {
   });
 
   describe('getAgentLogo', () => {
-    it('returns logo path for known agent (case-insensitive)', () => {
+    it('returns null for claude (branding removed)', () => {
       const logo = getAgentLogo('Claude');
-      expect(logo).toContain('/api/assets/logos/ai-major/claude.svg');
+      expect(logo).toBeNull();
     });
 
     it('returns logo for lowercase input', () => {
@@ -94,12 +94,12 @@ describe('agentLogo', () => {
       expect(result).toContain('gemini.svg');
     });
 
-    it('extracts adapter ID from custom_agent_id for extensions', () => {
+    it('extracts adapter ID from custom_agent_id for extensions (falls back when adapter has no logo)', () => {
       const result = resolveAgentLogo({
         isExtension: true,
         custom_agent_id: 'ext:my-ext:claude',
       });
-      expect(result).toContain('claude.svg');
+      expect(result).toBeNull();
     });
 
     it('returns null when no match found', () => {
@@ -111,8 +111,8 @@ describe('agentLogo', () => {
   });
 
   describe('hasAgentLogo', () => {
-    it('returns true for known agent', () => {
-      expect(hasAgentLogo('claude')).toBe(true);
+    it('returns false for claude (branding removed)', () => {
+      expect(hasAgentLogo('claude')).toBe(false);
     });
 
     it('returns false for unknown agent', () => {

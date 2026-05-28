@@ -27,6 +27,8 @@ type GuidActionRowProps = {
 
   // Model selector node (rendered by parent)
   modelSelectorNode: React.ReactNode;
+  /** When true, hides the permission/agent-mode selector */
+  hidePermissionSelector?: boolean;
 
   // Agent mode
   selectedAgent: string | 'custom';
@@ -83,6 +85,7 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
   enabledSkills,
   onToggleSkill,
   hidePresetTag = false,
+  hidePermissionSelector = false,
   loading,
   isButtonDisabled,
   speechInputNode,
@@ -256,7 +259,7 @@ const GuidActionRow: React.FC<GuidActionRowProps> = ({
           <div className={styles.actionConfigGroup} data-mobile={isMobile ? 'true' : undefined}>
             {modelSelectorNode}
 
-            {showModeSwitch && (
+            {!hidePermissionSelector && showModeSwitch && (
               <AgentModeSelector
                 backend={modeBackend}
                 compact
