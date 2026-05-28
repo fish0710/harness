@@ -86,6 +86,7 @@ import { repairAllCronJobTimeZonesOnce } from '@renderer/pages/cron/repairCronJo
 import Layout from './components/layout/Layout';
 import Router from './components/layout/Router';
 import { useAuth } from './hooks/context/AuthContext';
+import { ConversationHistoryProvider } from './hooks/context/ConversationHistoryContext';
 import HOC from './utils/ui/HOC';
 import type { BackendStartupFailureInfo } from '@/common/types/platform/electron';
 
@@ -170,7 +171,11 @@ const Main = () => {
 
   return (
     <Router
-      layout={<Layout />}
+      layout={
+        <ConversationHistoryProvider>
+          <Layout />
+        </ConversationHistoryProvider>
+      }
     />
   );
 };

@@ -1,5 +1,4 @@
 import type { TChatConversation } from '@/common/config/storage';
-import { Robot } from '@icon-park/react';
 import React from 'react';
 import styles from './RecentTaskCard.module.css';
 
@@ -24,30 +23,11 @@ const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning
   const title = conversation.name || conversation.id.slice(0, 8);
   const timeAgo = isRunning ? '' : formatTimeAgo(conversation.modified_at ?? conversation.created_at);
 
-  const backend =
-    (conversation.extra && 'backend' in conversation.extra && (conversation.extra as { backend?: string }).backend) ||
-    conversation.type ||
-    '';
-
   return (
     <div className={styles.card}>
       <div className={styles.top}>
         <div className={styles.left}>
-          <div className={styles.icon}>
-            {conversation.type === 'acp' ? (
-              <img
-                src={`/api/assets/logos/ai-major/${backend}.svg`}
-                alt=''
-                className={styles.iconImg}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement!.textContent = '</>';
-                }}
-              />
-            ) : (
-              <Robot theme='outline' size={22} fill='currentColor' />
-            )}
-          </div>
+          <div className={styles.icon}>&gt;</div>
           <div className={styles.meta}>
             <div className={styles.title}>{title}</div>
             <div className={`${styles.status} ${isRunning ? styles.running : styles.completed}`}>
