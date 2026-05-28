@@ -64,6 +64,8 @@ export type GuidSendDeps = {
 
   // Navigation
   navigate: NavigateFunction;
+  /** When true, skip navigation to conversation after create (stay on /guid). */
+  stayOnGuid?: boolean;
   t: TFunction;
 };
 
@@ -108,6 +110,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
     setMentionSelectorOpen,
     setMentionActiveIndex,
     navigate,
+    stayOnGuid,
     t,
   } = deps;
   const sendingRef = useRef(false);
@@ -187,7 +190,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         };
         sessionStorage.setItem(`openclaw_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 
-        await navigate(`/conversation/${conversation.id}`);
+        if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         alert(`Failed to create OpenClaw conversation: ${errorMessage}`);
@@ -235,7 +238,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         };
         sessionStorage.setItem(`nanobot_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 
-        await navigate(`/conversation/${conversation.id}`);
+        if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         alert(`Failed to create Nanobot conversation: ${errorMessage}`);
@@ -284,7 +287,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         };
         sessionStorage.setItem(`aionrs_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 
-        await navigate(`/conversation/${conversation.id}`);
+        if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         alert(`Failed to create Aion CLI conversation: ${errorMessage}`);
@@ -368,7 +371,7 @@ export const useGuidSend = (deps: GuidSendDeps): GuidSendResult => {
         };
         sessionStorage.setItem(`acp_initial_message_${conversation.id}`, JSON.stringify(initialMessage));
 
-        await navigate(`/conversation/${conversation.id}`);
+        if (!stayOnGuid) await navigate(`/conversation/${conversation.id}`);
       } catch (error: unknown) {
         console.error('Failed to create ACP conversation:', error);
         throw error;

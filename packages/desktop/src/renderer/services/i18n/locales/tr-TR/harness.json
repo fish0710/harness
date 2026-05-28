@@ -1,0 +1,10 @@
+{
+  "task": {
+    "recentTasks": "Görevler",
+    "viewAll": "Tümünü Gör",
+    "running": "çalışıyor",
+    "completed": "tamamlandı",
+    "empty": "Çalışan görevleri görmek için mesaj gönderin",
+    "stop": "Durdur"
+  }
+}

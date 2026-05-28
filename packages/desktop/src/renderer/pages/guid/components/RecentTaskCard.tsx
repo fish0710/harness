@@ -1,6 +1,6 @@
 import type { TChatConversation } from '@/common/config/storage';
 import { Robot } from '@icon-park/react';
-import React, { useState } from 'react';
+import React from 'react';
 import styles from './RecentTaskCard.module.css';
 
 interface RecentTaskCardProps {
@@ -21,8 +21,6 @@ function formatTimeAgo(ts: number): string {
 }
 
 const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning, onDetail, onStop }) => {
-  const [collapsed, setCollapsed] = useState(false);
-
   const title = conversation.name || conversation.id.slice(0, 8);
   const timeAgo = isRunning ? '' : formatTimeAgo(conversation.modified_at ?? conversation.created_at);
 
@@ -33,7 +31,7 @@ const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning
     'claude';
 
   return (
-    <div className={`${styles.card} ${collapsed ? styles.collapsed : ''}`}>
+    <div className={styles.card}>
       <div className={styles.top}>
         <div className={styles.left}>
           <div className={styles.icon}>
@@ -69,13 +67,6 @@ const RecentTaskCard: React.FC<RecentTaskCardProps> = ({ conversation, isRunning
               ■
             </button>
           )}
-          <button
-            className={styles.iconBtn}
-            onClick={() => setCollapsed((v) => !v)}
-            title={collapsed ? 'Expand' : 'Collapse'}
-          >
-            {collapsed ? '⌃' : '⌄'}
-          </button>
         </div>
       </div>
 

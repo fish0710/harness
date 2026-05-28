@@ -1,0 +1,10 @@
+{
+  "task": {
+    "recentTasks": "任務",
+    "viewAll": "查看全部",
+    "running": "執行中",
+    "completed": "已完成",
+    "empty": "發送訊息即可在此查看執行狀態",
+    "stop": "停止"
+  }
+}

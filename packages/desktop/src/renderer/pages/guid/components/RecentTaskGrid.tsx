@@ -9,11 +9,13 @@ const RECENT_WINDOW_MS = 6 * 60 * 60 * 1000; // 6 hours
 const MAX_CARDS = 12;
 
 interface RecentTaskGridProps {
+  expanded: boolean;
+  onToggle: () => void;
   onTaskDetail: (id: string) => void;
   onTaskStop: (id: string) => void;
 }
 
-const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ onTaskDetail, onTaskStop }) => {
+const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onTaskDetail, onTaskStop }) => {
   const { t } = useTranslation();
   const { conversations, isConversationGenerating } = useConversationHistoryContext();
 
@@ -40,46 +42,39 @@ const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ onTaskDetail, onTaskSto
     return [...running, ...completed];
   }, [conversations, isConversationGenerating]);
 
-  if (sorted.length === 0) {
-    return (
-      <div className={styles.section}>
-        <div className={styles.header}>
-          <span className={styles.title}>
-            任务 <span className={styles.count}>0</span>
-          </span>
-        </div>
-        <div className={styles.grid}>
-          <div className={styles.empty}>
-            <div className={styles.emptyIcon}>&gt;_</div>
-            <div>发起一个任务即可在此查看运行状态</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.section}>
       <div className={styles.header}>
         <span className={styles.title}>
-          任务 <span className={styles.count}>{sorted.length}</span>
+          {t('harness.task.recentTasks')} <span className={styles.count}>{sorted.length}</span>
         </span>
-        <button className={styles.viewAll} onClick={() => onTaskDetail('')}>
-          查看全部
+        <button className={styles.toggleBtn} onClick={onToggle}>
+          {expanded ? '收起' : '展开'}
         </button>
       </div>
 
-      <div className={styles.grid}>
-        {sorted.map((conv) => (
-          <RecentTaskCard
-            key={conv.id}
-            conversation={conv}
-            isRunning={isConversationGenerating(conv.id)}
-            onDetail={() => onTaskDetail(conv.id)}
-            onStop={() => onTaskStop(conv.id)}
-          />
-        ))}
-      </div>
+      {expanded && sorted.length === 0 && (
+        <div className={styles.grid}>
+          <div className={styles.empty}>
+            <div className={styles.emptyIcon}>&gt;_</div>
+            <div>{t('harness.task.empty')}</div>
+          </div>
+        </div>
+      )}
+
+      {expanded && sorted.length > 0 && (
+        <div className={styles.grid}>
+          {sorted.map((conv) => (
+            <RecentTaskCard
+              key={conv.id}
+              conversation={conv}
+              isRunning={isConversationGenerating(conv.id)}
+              onDetail={() => onTaskDetail(conv.id)}
+              onStop={() => onTaskStop(conv.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

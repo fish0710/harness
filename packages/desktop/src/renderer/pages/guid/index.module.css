@@ -711,14 +711,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 10px;
   position: relative;
+  overflow-y: auto;
 }
 
-/* 整体内容块略往上移，减轻「重心偏下」的感觉 */
 .guidContainer .guidLayout {
-  margin-top: -5vh;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 /* Agent 选中时：先放大再回落至略大（pop 动效） */

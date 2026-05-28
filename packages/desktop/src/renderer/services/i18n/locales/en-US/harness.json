@@ -1,0 +1,10 @@
+{
+  "task": {
+    "recentTasks": "Tasks",
+    "viewAll": "View All",
+    "running": "running",
+    "completed": "completed",
+    "empty": "Send a message to see running tasks here",
+    "stop": "Stop"
+  }
+}

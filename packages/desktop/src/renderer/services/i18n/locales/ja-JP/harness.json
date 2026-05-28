@@ -1,0 +1,10 @@
+{
+  "task": {
+    "recentTasks": "タスク",
+    "viewAll": "すべて表示",
+    "running": "実行中",
+    "completed": "完了",
+    "empty": "メッセージを送信して実行状況を確認",
+    "stop": "停止"
+  }
+}

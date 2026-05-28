@@ -160,6 +160,7 @@ const GuidPage: React.FC = () => {
     setMentionActiveIndex: mention.setMentionActiveIndex,
 
     navigate,
+    stayOnGuid: true,
     t,
   });
 
@@ -392,13 +393,14 @@ const GuidPage: React.FC = () => {
     />
   );
 
+  // Task grid expand/collapse
+  const [taskGridExpanded, setTaskGridExpanded] = useState(true);
+
   // Task detail / stop handlers
   const handleTaskDetail = useCallback(
     (id: string) => {
       if (id) {
         navigate(`/conversation/${id}`);
-      } else {
-        navigate('/settings/model');
       }
     },
     [navigate]
@@ -464,7 +466,12 @@ const GuidPage: React.FC = () => {
           </HarnessInputSection>
 
           {/* Recent Task Grid */}
-          <RecentTaskGrid onTaskDetail={handleTaskDetail} onTaskStop={handleTaskStop} />
+          <RecentTaskGrid
+            expanded={taskGridExpanded}
+            onToggle={() => setTaskGridExpanded((v) => !v)}
+            onTaskDetail={handleTaskDetail}
+            onTaskStop={handleTaskStop}
+          />
         </div>
 
         <QuickActionButtons
