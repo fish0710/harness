@@ -1,0 +1,201 @@
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(120, 255, 101, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(120, 255, 101, 0.25);
+  box-shadow: 0 0 24px rgba(120, 255, 101, 0.06);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.left {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(120, 255, 101, 0.08);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.iconImg {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.running {
+  color: var(--brand);
+}
+
+.completed {
+  color: var(--text-secondary);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.runningDot {
+  background: var(--brand);
+  box-shadow: 0 0 6px var(--brand);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.completedDot {
+  background: var(--text-disabled);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border-base);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  font-size: 14px;
+}
+
+.iconBtn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: rgba(120, 255, 101, 0.08);
+}
+
+.logs {
+  margin-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 14px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.logLine {
+  display: flex;
+  gap: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.logTime {
+  color: var(--text-disabled);
+  white-space: nowrap;
+}
+
+.logOk {
+  color: var(--brand);
+}
+
+.progress {
+  margin-top: 16px;
+  height: 4px;
+  background: var(--bg-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, var(--brand), #8aff78);
+  border-radius: 999px;
+  animation: progressSlide 1.8s ease-in-out infinite;
+}
+
+@keyframes progressSlide {
+  0% {
+    transform: translateX(-100%);
+    width: 20%;
+  }
+  50% {
+    width: 40%;
+  }
+  100% {
+    transform: translateX(300%);
+    width: 20%;
+  }
+}
+
+.collapsed .logs,
+.collapsed .progress {
+  display: none;
+}
+
+/* Stale indicator for recently completed */
+.timeAgo {
+  color: var(--text-disabled);
+  font-size: 11px;
+  margin-left: 4px;
+}

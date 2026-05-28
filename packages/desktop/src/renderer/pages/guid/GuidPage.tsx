@@ -7,6 +7,7 @@
 import { ipcBridge } from '@/common';
 import { resolveLocaleKey } from '@/common/utils';
 
+import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
 import { useInputFocusRing } from '@/renderer/hooks/chat/useInputFocusRing';
 import { openExternalUrl, resolveExtensionAssetUrl } from '@/renderer/utils/platform';
 import { CUSTOM_AVATAR_IMAGE_MAP } from './constants';
@@ -16,6 +17,7 @@ import GuidModelSelector from './components/GuidModelSelector';
 import HarnessAgentInlineSelector from './components/HarnessAgentInlineSelector';
 import HarnessInputSection from './components/HarnessInputSection';
 import HarnessTopBar from './components/HarnessTopBar';
+import RecentTaskGrid from './components/RecentTaskGrid';
 import MentionDropdown, { MentionSelectorBadge } from './components/MentionDropdown';
 import QuickActionButtons from './components/QuickActionButtons';
 import FeedbackReportModal from '@/renderer/components/settings/SettingsModal/contents/FeedbackReportModal';
@@ -43,6 +45,11 @@ const GuidPage: React.FC = () => {
   const openAssistantDetailsRef = useRef<(() => void) | null>(null);
   const descriptionTextRef = useRef<HTMLDivElement>(null);
   const { activeBorderColor, inactiveBorderColor, activeShadow } = useInputFocusRing();
+  const convCtx = useConversationHistoryContext();
+  const activeCount = useMemo(
+    () => convCtx.conversations.filter((c) => convCtx.isConversationGenerating(c.id)).length,
+    [convCtx.conversations, convCtx.isConversationGenerating]
+  );
 
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -385,12 +392,30 @@ const GuidPage: React.FC = () => {
     />
   );
 
+  // Task detail / stop handlers
+  const handleTaskDetail = useCallback(
+    (id: string) => {
+      if (id) {
+        navigate(`/conversation/${id}`);
+      } else {
+        navigate('/settings/model');
+      }
+    },
+    [navigate]
+  );
+
+  const handleTaskStop = useCallback((id: string) => {
+    ipcBridge.conversation.stop.invoke({ conversation_id: id }).catch((error) => {
+      console.error('Failed to stop conversation:', error);
+    });
+  }, []);
+
   return (
     <ConfigProvider getPopupContainer={() => guidContainerRef.current || document.body}>
       <div ref={guidContainerRef} className={styles.guidContainer}>
         <div className={styles.guidLayout}>
           {/* Harness Top Bar */}
-          <HarnessTopBar activeCount={0} />
+          <HarnessTopBar activeCount={activeCount} />
 
           {/* Agent Inline Selector */}
           <HarnessAgentInlineSelector
@@ -438,7 +463,8 @@ const GuidPage: React.FC = () => {
             </div>
           </HarnessInputSection>
 
-          {/* Placeholder for RecentTaskGrid — PR2 */}
+          {/* Recent Task Grid */}
+          <RecentTaskGrid onTaskDetail={handleTaskDetail} onTaskStop={handleTaskStop} />
         </div>
 
         <QuickActionButtons
