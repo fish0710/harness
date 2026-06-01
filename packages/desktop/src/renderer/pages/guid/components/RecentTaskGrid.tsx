@@ -20,9 +20,8 @@ const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onT
   const { conversations, isConversationGenerating } = useConversationHistoryContext();
   const [page, setPage] = useState(0);
 
-  // Collect all running + recently-completed conversations (no hard limit)
+  // Collect all running + completed conversations (no time limit)
   const sorted = useMemo(() => {
-    const now = Date.now();
     const running: TChatConversation[] = [];
     const completed: TChatConversation[] = [];
 
@@ -30,10 +29,7 @@ const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onT
       if (isConversationGenerating(conv.id)) {
         running.push(conv);
       } else {
-        const modifiedAt = conv.modified_at;
-        if (modifiedAt && now - modifiedAt < RECENT_WINDOW_MS) {
-          completed.push(conv);
-        }
+        completed.push(conv);
       }
     }
 
