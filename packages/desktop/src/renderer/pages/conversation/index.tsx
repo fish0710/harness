@@ -22,10 +22,12 @@ const ChatConversationIndex: React.FC = () => {
   useEffect(() => {
     if (!id) return;
 
-    // 切换会话时自动关闭预览面板，避免跨会话残留
-    // Close preview on every conversation change, including initial mount
-    // (component may remount via React Router, resetting the ref to undefined)
-    if (previousConversationIdRef.current !== id) {
+    // 切换会话时自动关闭预览面板，避免跨会话残留；首次挂载时跳过，
+    // 让 PreviewContext 的 isOpen: true 默认值生效
+    // Close preview on conversation change to avoid cross-session residue;
+    // skip the very first run so the PreviewContext isOpen: true default
+    // actually takes effect for new sessions.
+    if (previousConversationIdRef.current !== undefined && previousConversationIdRef.current !== id) {
       closePreview();
     }
 
