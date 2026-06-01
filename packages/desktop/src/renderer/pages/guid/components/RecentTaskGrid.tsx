@@ -1,6 +1,6 @@
 import type { TChatConversation } from '@/common/config/storage';
 import { useConversationHistoryContext } from '@/renderer/hooks/context/ConversationHistoryContext';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RecentTaskCard from './RecentTaskCard';
 import styles from './RecentTaskGrid.module.css';
@@ -44,6 +44,11 @@ const RecentTaskGrid: React.FC<RecentTaskGridProps> = ({ expanded, onToggle, onT
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
+  // Reset to the first page when the list shrinks below the current page,
+  // so the user doesn't get stranded on an empty page after tasks disappear.
+  useEffect(() => {
+    setPage((prev) => (prev >= totalPages ? 0 : prev));
+  }, [totalPages]);
   const pageItems = useMemo(() => sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE), [sorted, safePage]);
 
   const hasPrev = safePage > 0;
