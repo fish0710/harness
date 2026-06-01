@@ -52,9 +52,9 @@ describe('PreviewContext', () => {
     cleanup();
   });
 
-  it('initializes with closed state', () => {
+  it('initializes with open panel by default', () => {
     const { result } = renderHook(() => usePreviewContext(), { wrapper });
-    expect(result.current.isOpen).toBe(false);
+    expect(result.current.isOpen).toBe(true);
     expect(result.current.tabs).toEqual([]);
     expect(result.current.activeTabId).toBe(null);
   });
