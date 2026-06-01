@@ -33,6 +33,18 @@ import { mutate as swrMutate } from 'swr';
 import type { Assistant } from '@/common/types/agent/assistantTypes';
 import styles from './index.module.css';
 
+const TASK_GRID_EXPANDED_KEY = 'aionui_guid_task_grid_expanded';
+
+const loadPersistedTaskGridExpanded = (): boolean => {
+  try {
+    const stored = localStorage.getItem(TASK_GRID_EXPANDED_KEY);
+    if (stored === null) return false;
+    return stored === 'true';
+  } catch {
+    return false;
+  }
+};
+
 const GuidPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -50,8 +62,16 @@ const GuidPage: React.FC = () => {
   const localeKey = resolveLocaleKey(i18n.language);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
-  // Task grid expand/collapse
-  const [taskGridExpanded, setTaskGridExpanded] = useState(false);
+  // Task grid expand/collapse — persisted to localStorage so the user's
+  // expand/collapse choice survives a page refresh.
+  const [taskGridExpanded, setTaskGridExpanded] = useState<boolean>(loadPersistedTaskGridExpanded);
+  useEffect(() => {
+    try {
+      localStorage.setItem(TASK_GRID_EXPANDED_KEY, String(taskGridExpanded));
+    } catch {
+      // Ignore quota / disabled-storage errors
+    }
+  }, [taskGridExpanded]);
 
   // --- Skills state ---
   const [allSkills, setAllSkills] = useState<Array<{ name: string; description: string; isAuto: boolean }>>([]);
