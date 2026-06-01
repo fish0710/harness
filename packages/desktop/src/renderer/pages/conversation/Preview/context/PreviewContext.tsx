@@ -139,14 +139,14 @@ const loadPersistedState = (): { isOpen: boolean; tabs: PreviewTab[]; activeTabI
     }
 
     return {
-      isOpen: false, // 始终默认关闭 / Always start closed
+      isOpen: true, // 始终默认打开 / Always start open
       tabs,
       activeTabId,
     };
   } catch {
     // 忽略解析错误 / Ignore parsing errors
   }
-  return { isOpen: false, tabs: [], activeTabId: null };
+  return { isOpen: true, tabs: [], activeTabId: null };
 };
 
 export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
