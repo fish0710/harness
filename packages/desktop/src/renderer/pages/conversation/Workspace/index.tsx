@@ -34,6 +34,7 @@ import {
   computeContextMenuPosition,
   extractNodeData,
   extractNodeKey,
+  filterHiddenEntries,
   flattenSingleRoot,
   getTargetFolderPath,
 } from './utils/treeHelpers';
@@ -460,10 +461,11 @@ const ChatWorkspace: React.FC<WorkspaceProps> = ({
                     .then((res) => {
                       const newChildren = res[0]?.children;
                       if (!newChildren?.length) return;
+                      const filteredChildren = filterHiddenEntries(newChildren);
                       treeHook.setFiles((prev) => {
                         const assign = (nodes: IDirOrFile[]): IDirOrFile[] =>
                           nodes.map((n) => {
-                            if (n.relativePath === targetRelPath) return { ...n, children: newChildren };
+                            if (n.relativePath === targetRelPath) return { ...n, children: filteredChildren };
                             if (n.children) return { ...n, children: assign(n.children) };
                             return n;
                           });
