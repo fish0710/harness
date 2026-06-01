@@ -263,6 +263,26 @@ export function computeContextMenuPosition(
 }
 
 /**
+ * Recursively remove dot-prefixed entries from a workspace tree.
+ * Mirrors typical file-manager "hide hidden files" behavior: any entry
+ * whose `name` starts with "." is removed, including its descendants
+ * (we don't need to descend — the whole entry is hidden).
+ *
+ * Returns a new array; the input is not mutated. For nodes whose name
+ * is missing, the optional-chained startsWith returns false so the
+ * node is preserved rather than dropped.
+ */
+export function filterHiddenEntries(list: IDirOrFile[]): IDirOrFile[] {
+  return list
+    .filter((node) => !node.name?.startsWith('.'))
+    .map((node) =>
+      node.isFile || !node.children
+        ? node
+        : { ...node, children: filterHiddenEntries(node.children) }
+    );
+}
+
+/**
  * 获取目标文件夹路径（从 selectedNodeRef 或 selected keys）
  * Get target folder path from selectedNodeRef or selected keys
  */
