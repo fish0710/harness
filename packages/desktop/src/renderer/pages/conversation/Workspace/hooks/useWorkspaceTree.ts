@@ -10,7 +10,7 @@ import { emitter } from '@/renderer/utils/emitter';
 import { dispatchWorkspaceHasFilesEvent } from '@/renderer/utils/workspace/workspaceEvents';
 import { useCallback, useRef, useState } from 'react';
 import type { SelectedNodeRef } from '../types';
-import { getFirstLevelKeys, mergeLoadedChildren } from '../utils/treeHelpers';
+import { filterHiddenEntries, getFirstLevelKeys, mergeLoadedChildren } from '../utils/treeHelpers';
 
 interface UseWorkspaceTreeOptions {
   workspace: string;
@@ -98,9 +98,9 @@ export function useWorkspaceTree({ workspace, conversation_id, eventPrefix }: Us
           // first load (no prior tree to merge). Functional setState reads the
           // latest files snapshot without a stale closure.
           if (!search && !isFirstLoadRef.current) {
-            setFiles((prev) => mergeLoadedChildren(res, prev));
+            setFiles((prev) => filterHiddenEntries(mergeLoadedChildren(res, prev)));
           } else {
-            setFiles(res);
+            setFiles(filterHiddenEntries(res));
           }
           // 只在搜索时才重置 Tree key，否则保持选中状态
           // Only reset Tree key when searching, otherwise keep selection state
