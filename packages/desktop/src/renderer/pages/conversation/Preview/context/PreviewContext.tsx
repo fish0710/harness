@@ -117,8 +117,8 @@ const parsePersistedTabs = (value: unknown): PreviewTab[] => {
 };
 
 // 从 localStorage 恢复状态 / Restore state from localStorage
-// 注意：isOpen 不从 localStorage 恢复，新会话时预览面板默认关闭
-// Note: isOpen is not restored from localStorage, preview panel is closed by default for new sessions
+// 注意：isOpen 不从 localStorage 恢复，新会话时预览面板默认打开
+// Note: isOpen is not restored from localStorage, preview panel is open by default for new sessions
 const loadPersistedState = (): { isOpen: boolean; tabs: PreviewTab[]; activeTabId: string | null } => {
   try {
     let tabs = parsePersistedTabs(JSON.parse(localStorage.getItem(PREVIEW_TABS_KEY) || '[]'));
