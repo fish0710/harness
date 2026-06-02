@@ -69,8 +69,12 @@ const ChatLayout: React.FC<{
   const isDesktop = !layout?.isMobile;
   const isMobile = Boolean(layout?.isMobile);
 
-  // Preview panel state
-  const { isOpen: isPreviewOpen } = usePreviewContext();
+  // Preview panel state. `isPreviewOpen` is the user's preference (set via
+  // the toggle / context); `shouldShowPreview` is what actually affects the
+  // layout — it requires the panel to be open AND have an active tab to
+  // render, so an empty panel never reserves whitespace on the right.
+  const { isOpen: isPreviewOpen, activeTab } = usePreviewContext();
+  const shouldShowPreview = isPreviewOpen && activeTab !== null;
 
   // --- Hook A: workspace collapse ---
   const { rightSiderCollapsed, setRightSiderCollapsed } = useWorkspaceCollapse({
@@ -123,7 +127,7 @@ const ChatLayout: React.FC<{
     chatSplitRatio: 60, // placeholder; only dynamicChatMinRatio/dynamicChatMaxRatio are used here
     workspaceEnabled,
     isDesktop,
-    isPreviewOpen,
+    isPreviewOpen: shouldShowPreview,
     rightSiderCollapsed,
     isMobile,
   });
@@ -146,14 +150,14 @@ const ChatLayout: React.FC<{
     chatSplitRatio,
     workspaceEnabled,
     isDesktop,
-    isPreviewOpen,
+    isPreviewOpen: shouldShowPreview,
     rightSiderCollapsed,
     isMobile,
   });
 
   // --- Hook D: preview auto-collapse ---
   usePreviewAutoCollapse({
-    isPreviewOpen,
+    isPreviewOpen: shouldShowPreview,
     isDesktop,
     workspaceEnabled,
     rightSiderCollapsed,
@@ -165,7 +169,7 @@ const ChatLayout: React.FC<{
     containerWidth,
     workspaceEnabled,
     isDesktop,
-    isPreviewOpen,
+    isPreviewOpen: shouldShowPreview,
     rightSiderCollapsed,
     setRightSiderCollapsed,
     workspaceWidthPx: workspaceWidthPxPref,
@@ -271,10 +275,10 @@ const ChatLayout: React.FC<{
             <div
               className='flex flex-col relative'
               style={{
-                flexGrow: isPreviewOpen && isDesktop ? 0 : 1,
+                flexGrow: shouldShowPreview && isDesktop ? 0 : 1,
                 flexShrink: 0,
-                flexBasis: isPreviewOpen && isDesktop ? `${chatFlex}%` : 0,
-                display: isPreviewOpen && isMobile ? 'none' : 'flex',
+                flexBasis: shouldShowPreview && isDesktop ? `${chatFlex}%` : 0,
+                display: shouldShowPreview && isMobile ? 'none' : 'flex',
                 minWidth: '240px',
               }}
               onClick={() => {
@@ -285,8 +289,11 @@ const ChatLayout: React.FC<{
                 {props.children}
               </ArcoLayout.Content>
             </div>
-            {/* Preview panel - conditionally rendered */}
-            {isPreviewOpen && (
+            {/* Preview panel - conditionally rendered. Only allocate the
+                wrapper (and the flex space it claims) when the panel is open
+                AND has an active tab to display. An open-but-empty panel
+                would otherwise leave a hollow rounded box on the right. */}
+            {shouldShowPreview && (
               <div
                 className={classNames(
                   'preview-panel flex flex-col relative overflow-visible rounded-[15px]',
