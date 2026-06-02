@@ -281,25 +281,22 @@ const PreviewPanel: React.FC = () => {
     setContextMenu({ show: false, x: 0, y: 0, tabId: null });
   }, [tabs, closeTab]);
 
-  // 如果预览面板未打开，不渲染 / Don't render if preview panel is not open
-  if (!isOpen || !activeTab) return null;
-
-  const { content, content_type, metadata } = activeTab;
-  const isMarkdown = content_type === 'markdown';
-  const isHTML = content_type === 'html';
-  const isEditable = metadata?.editable !== false; // 默认可编辑 / Default editable
-
-  // 检查文件类型是否已有内置的打开按钮（Word、PPT、PDF、Excel 组件内部已提供）
-  // Check if file type already has built-in open button
-  // (Word, PPT, PDF, Excel components provide their own)
-  const hasBuiltInOpenButton = (FILE_TYPES_WITH_BUILTIN_OPEN as readonly string[]).includes(content_type);
-
-  // 对所有有 file_path 的文件显示"在系统中打开"按钮（统一在工具栏显示）
-  // Show "Open in System" button for all files with file_path (unified in toolbar)
-  const showOpenInSystemButton = Boolean(metadata?.file_path);
+  // Hooks below must run unconditionally on every render, so they are declared
+  // BEFORE the early return. They read `activeTab` via optional chaining and
+  // bail out at runtime if no tab is active. The original code placed these
+  // after the early return, which violated the Rules of Hooks: when the
+  // PreviewContext default flipped to `isOpen: true` (commit 81b1b3372), the
+  // panel started rendering with `isOpen: true, activeTab: undefined`, taking
+  // the early return on first render and skipping these hooks — then the first
+  // tab add caused a different number of hooks on the next render and React
+  // threw error #310. Keeping the hooks above the early return makes their
+  // count stable across the closed→open transition.
 
   // 下载文件到本地 / Download file to local system
   const handleDownload = useCallback(async () => {
+    const tab = activeTab;
+    if (!tab) return;
+    const { content, content_type, metadata } = tab;
     try {
       const rawFileName = metadata?.file_name || `${content_type}-${Date.now()}`;
 
@@ -367,11 +364,20 @@ const PreviewPanel: React.FC = () => {
       console.error('[PreviewPanel] Failed to download file:', error);
       messageApi.error(t('messages.downloadFailed', { defaultValue: 'Failed to download' }));
     }
-  }, [content, content_type, metadata?.file_name, metadata?.file_path, metadata?.language, messageApi, t]);
+  }, [
+    activeTab?.content,
+    activeTab?.content_type,
+    activeTab?.metadata?.file_name,
+    activeTab?.metadata?.file_path,
+    activeTab?.metadata?.language,
+    messageApi,
+    t,
+  ]);
 
   // 在系统默认应用中打开文件 / Open file in system default application
   const handleOpenInSystem = useCallback(async () => {
-    if (!metadata?.file_path) {
+    const file_path = activeTab?.metadata?.file_path;
+    if (!file_path) {
       try {
         messageApi.error(t('preview.openInSystemFailed'));
       } catch {
@@ -382,7 +388,7 @@ const PreviewPanel: React.FC = () => {
 
     try {
       // 使用系统默认应用打开文件 / Open file with system default application
-      await ipcBridge.shell.openFile.invoke(metadata.file_path);
+      await ipcBridge.shell.openFile.invoke(file_path);
       try {
         messageApi.success(t('preview.openInSystemSuccess'));
       } catch {
@@ -395,7 +401,24 @@ const PreviewPanel: React.FC = () => {
         // Context holder may be unmounted after async operation
       }
     }
-  }, [metadata?.file_path, messageApi, t]);
+  }, [activeTab?.metadata?.file_path, messageApi, t]);
+
+  // 如果预览面板未打开，不渲染 / Don't render if preview panel is not open
+  if (!isOpen || !activeTab) return null;
+
+  const { content, content_type, metadata } = activeTab;
+  const isMarkdown = content_type === 'markdown';
+  const isHTML = content_type === 'html';
+  const isEditable = metadata?.editable !== false; // 默认可编辑 / Default editable
+
+  // 检查文件类型是否已有内置的打开按钮（Word、PPT、PDF、Excel 组件内部已提供）
+  // Check if file type already has built-in open button
+  // (Word, PPT, PDF, Excel components provide their own)
+  const hasBuiltInOpenButton = (FILE_TYPES_WITH_BUILTIN_OPEN as readonly string[]).includes(content_type);
+
+  // 对所有有 file_path 的文件显示"在系统中打开"按钮（统一在工具栏显示）
+  // Show "Open in System" button for all files with file_path (unified in toolbar)
+  const showOpenInSystemButton = Boolean(metadata?.file_path);
 
   // 渲染历史下拉菜单 / Render history dropdown
   const renderHistoryDropdown = () => {
