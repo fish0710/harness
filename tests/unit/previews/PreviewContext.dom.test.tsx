@@ -102,4 +102,66 @@ describe('PreviewContext', () => {
     expect(result.current.activeTab?.content).toBe('modified');
     expect(result.current.activeTab?.isDirty).toBe(true);
   });
+
+  it('scopes tabs to the active conversation', () => {
+    const { result } = renderHook(() => usePreviewContext(), { wrapper });
+
+    // Activate conversation A and open a tab in it.
+    act(() => {
+      result.current.setActiveConversationId('conv-a');
+    });
+    act(() => {
+      result.current.openPreview('<html>conv-a</html>', 'html', { title: 'a.html' });
+    });
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.tabs[0].metadata?.title).toBe('a.html');
+
+    // Switch to conversation B — should see no tabs, defaults restored.
+    act(() => {
+      result.current.setActiveConversationId('conv-b');
+    });
+    expect(result.current.tabs).toEqual([]);
+    expect(result.current.activeTabId).toBe(null);
+    expect(result.current.isOpen).toBe(true);
+
+    // Open a different tab in conversation B.
+    act(() => {
+      result.current.openPreview('<html>conv-b</html>', 'html', { title: 'b.html' });
+    });
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.tabs[0].metadata?.title).toBe('b.html');
+
+    // Switch back to A — should restore A's snapshot, not see B's tab.
+    act(() => {
+      result.current.setActiveConversationId('conv-a');
+    });
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.tabs[0].metadata?.title).toBe('a.html');
+    expect(result.current.activeTabId).toBe(result.current.tabs[0].id);
+  });
+
+  it('clears visible state when deactivated (id passed as null)', () => {
+    const { result } = renderHook(() => usePreviewContext(), { wrapper });
+    act(() => {
+      result.current.setActiveConversationId('conv-x');
+    });
+    act(() => {
+      result.current.openPreview('payload', 'markdown', { title: 'x.md' });
+    });
+    expect(result.current.tabs).toHaveLength(1);
+
+    act(() => {
+      result.current.setActiveConversationId(null);
+    });
+    expect(result.current.tabs).toEqual([]);
+    expect(result.current.activeTabId).toBe(null);
+    expect(result.current.isOpen).toBe(true);
+
+    // Returning to the same conversation restores its snapshot.
+    act(() => {
+      result.current.setActiveConversationId('conv-x');
+    });
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.tabs[0].metadata?.title).toBe('x.md');
+  });
 });

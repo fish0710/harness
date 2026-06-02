@@ -13,26 +13,18 @@ const ChatConversationIndex: React.FC = () => {
   const { id } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { closePreview } = usePreviewContext();
+  const { setActiveConversationId } = usePreviewContext();
   const { syncTitleFromHistory } = useAutoTitle();
-  const previousConversationIdRef = useRef<string | undefined>(undefined);
   const notFoundHandledIdRef = useRef<string | undefined>(undefined);
   const defaultConversationTitle = t('conversation.welcome.newConversation');
 
+  // Tell PreviewContext which conversation is active. PreviewContext then
+  // saves the outgoing conversation's snapshot into its per-conversation map
+  // and loads the new one — so each conversation always shows its own tabs
+  // and the preview panel never leaks state across conversations.
   useEffect(() => {
-    if (!id) return;
-
-    // 切换会话时自动关闭预览面板，避免跨会话残留；首次挂载时跳过，
-    // 让 PreviewContext 的 isOpen: true 默认值生效
-    // Close preview on conversation change to avoid cross-session residue;
-    // skip the very first run so the PreviewContext isOpen: true default
-    // actually takes effect for new sessions.
-    if (previousConversationIdRef.current !== undefined && previousConversationIdRef.current !== id) {
-      closePreview();
-    }
-
-    previousConversationIdRef.current = id;
-  }, [id, closePreview]);
+    setActiveConversationId(id ?? null);
+  }, [id, setActiveConversationId]);
 
   const { data, isLoading, mutate } = useSWR(id ? `conversation/${id}` : null, () => {
     return getConversationOrNull(id!);

@@ -59,6 +59,9 @@ export interface PreviewContextValue {
   findPreviewTab: (type: PreviewContentType, content?: string, metadata?: PreviewMetadata) => PreviewTab | null; // 查找匹配的 tab
   closePreviewByIdentity: (type: PreviewContentType, content?: string, metadata?: PreviewMetadata) => void; // 根据内容关闭指定 tab
 
+  // 会话作用域 / Per-conversation scoping
+  setActiveConversationId: (id: string | null) => void;
+
   // 发送框集成 / Sendbox integration
   addToSendBox: (text: string) => void;
   setSendBoxHandler: (handler: ((text: string) => void) | null) => void;
@@ -72,123 +75,81 @@ export interface PreviewContextValue {
 
 const PreviewContext = createContext<PreviewContextValue | null>(null);
 
-// 持久化 key / Persistence keys
-const PREVIEW_TABS_KEY = 'aionui_preview_tabs';
-const PREVIEW_ACTIVE_TAB_ID_KEY = 'aionui_preview_active_tab_id';
-const LEGACY_PREVIEW_STATE_KEY = 'aionui_preview_state';
-
-// 仅持久化小体积文本预览，避免大文本导致 localStorage 写入卡顿
-// Persist only lightweight text previews to avoid localStorage jank on large files
-const MAX_PERSISTED_TAB_CONTENT_LENGTH = 80_000;
-const PERSISTABLE_CONTENT_TYPES = new Set<PreviewContentType>(['markdown', 'html', 'code', 'diff']);
-
-const sanitizeTabsForPersistence = (input: PreviewTab[]): PreviewTab[] => {
-  return input
-    .filter((tab) => PERSISTABLE_CONTENT_TYPES.has(tab.content_type))
-    .filter((tab) => tab.content.length <= MAX_PERSISTED_TAB_CONTENT_LENGTH)
-    .map((tab) => ({
-      ...tab,
-      isDirty: false,
-      originalContent: tab.content,
-    }));
+/** Per-conversation preview snapshot. */
+type ConversationPreviewState = {
+  isOpen: boolean;
+  tabs: PreviewTab[];
+  activeTabId: string | null;
 };
 
-const parsePersistedTabs = (value: unknown): PreviewTab[] => {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .filter((tab): tab is PreviewTab => {
-      if (!tab || typeof tab !== 'object') return false;
-      const candidate = tab as Partial<PreviewTab>;
-      return (
-        typeof candidate.id === 'string' &&
-        typeof candidate.title === 'string' &&
-        typeof candidate.content === 'string' &&
-        typeof candidate.content_type === 'string'
-      );
-    })
-    .filter((tab) => PERSISTABLE_CONTENT_TYPES.has(tab.content_type))
-    .filter((tab) => tab.content.length <= MAX_PERSISTED_TAB_CONTENT_LENGTH)
-    .map((tab) => ({
-      ...tab,
-      originalContent: typeof tab.originalContent === 'string' ? tab.originalContent : tab.content,
-      isDirty: false,
-    }));
-};
-
-// 从 localStorage 恢复状态 / Restore state from localStorage
-// 注意：isOpen 不从 localStorage 恢复，新会话时预览面板默认打开
-// Note: isOpen is not restored from localStorage, preview panel is open by default for new sessions
-const loadPersistedState = (): { isOpen: boolean; tabs: PreviewTab[]; activeTabId: string | null } => {
-  try {
-    let tabs = parsePersistedTabs(JSON.parse(localStorage.getItem(PREVIEW_TABS_KEY) || '[]'));
-    let activeTabId = localStorage.getItem(PREVIEW_ACTIVE_TAB_ID_KEY);
-
-    // 兼容旧版单 key 存储 / Backward compatibility for legacy single-key storage
-    if (tabs.length === 0) {
-      const legacyStored = localStorage.getItem(LEGACY_PREVIEW_STATE_KEY);
-      if (legacyStored) {
-        const parsed = JSON.parse(legacyStored) as { tabs?: unknown; activeTabId?: unknown };
-        tabs = parsePersistedTabs(parsed.tabs);
-        activeTabId = typeof parsed.activeTabId === 'string' ? parsed.activeTabId : activeTabId;
-      }
-    }
-
-    if (activeTabId && !tabs.some((tab) => tab.id === activeTabId)) {
-      activeTabId = tabs[0]?.id || null;
-    }
-
-    return {
-      isOpen: true, // 始终默认打开 / Always start open
-      tabs,
-      activeTabId,
-    };
-  } catch {
-    // 忽略解析错误 / Ignore parsing errors
-  }
-  return { isOpen: true, tabs: [], activeTabId: null };
+/** Default snapshot for a conversation that has never been opened in this app session. */
+const DEFAULT_CONVERSATION_STATE: ConversationPreviewState = {
+  isOpen: true,
+  tabs: [],
+  activeTabId: null,
 };
 
 export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 从 localStorage 恢复初始状态 / Restore initial state from localStorage
-  const persistedState = loadPersistedState();
-  const [isOpen, setIsOpen] = useState(persistedState.isOpen);
-  const [tabs, setTabs] = useState<PreviewTab[]>(persistedState.tabs);
-  const [activeTabId, setActiveTabId] = useState<string | null>(persistedState.activeTabId);
+  // Preview state is now scoped per conversation. The provider lives at the
+  // app root, so without per-conversation storage the same HTML preview would
+  // leak across conversations when the user navigates between them.
+  //
+  // Storage strategy:
+  //   - `perConvStateRef` holds the snapshot for every conversation the user
+  //     has ever opened in this app session, keyed by conversation id.
+  //   - `currentConversationIdRef` tracks which id is "active" — the one
+  //     whose snapshot is mirrored into the visible useState below.
+  //   - State changes go through the existing useState setters
+  //     (setIsOpen / setTabs / setActiveTabId); `setActiveConversationId` is
+  //     the only entry point that switches which conversation is active.
+  //   - We use refs (not useState) for the map so writing the current
+  //     conversation's snapshot back to the map does not trigger a re-render
+  //     of the provider itself — only the visible state change does.
+  //
+  // Cross-app-restart persistence was previously implemented via localStorage
+  // for tabs/activeTabId. That storage was global (not per-conversation), so
+  // it was incompatible with this per-conversation design. The simplest
+  // correct fix is to drop it: each conversation now starts with a fresh
+  // snapshot the first time it is activated in a session, which matches the
+  // user's expectation that "each session displays its own data".
+  const perConvStateRef = useRef<Map<string, ConversationPreviewState>>(new Map());
+  const currentConversationIdRef = useRef<string | null>(null);
+
+  const [isOpen, setIsOpen] = useState<boolean>(DEFAULT_CONVERSATION_STATE.isOpen);
+  const [tabs, setTabs] = useState<PreviewTab[]>(DEFAULT_CONVERSATION_STATE.tabs);
+  const [activeTabId, setActiveTabId] = useState<string | null>(DEFAULT_CONVERSATION_STATE.activeTabId);
+  // Live mirror of the visible state so setActiveConversationId can read the
+  // latest values without taking them as dependencies (which would invalidate
+  // the callback on every state change).
+  const liveStateRef = useRef<ConversationPreviewState>({ isOpen, tabs, activeTabId });
+  liveStateRef.current = { isOpen, tabs, activeTabId };
   // const [sendBoxHandler, setSendBoxHandlerState] = useState<((text: string) => void) | null>(null);
   const sendBoxHandler = useRef<((text: string) => void) | null>(null);
   const [domSnippets, setDomSnippets] = useState<DomSnippet[]>([]);
 
-  // 持久化 tabs 到 localStorage（仅保存小体积文本 tab）
-  // Persist tabs to localStorage (only lightweight text tabs)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(PREVIEW_TABS_KEY, JSON.stringify(sanitizeTabsForPersistence(tabs)));
-        // 迁移后清理旧 key，减少重复解析
-        // Remove legacy key after migration to avoid duplicate parsing
-        localStorage.removeItem(LEGACY_PREVIEW_STATE_KEY);
-      } catch {
-        // 忽略存储错误（如存储空间不足）/ Ignore storage errors (e.g., quota exceeded)
-      }
-    }, 150);
+  /**
+   * Switch the active conversation. Saves the currently visible state to the
+   * map under the previous id, then loads the new id's snapshot (or
+   * defaults). A no-op when id matches the current one. Pass `null` to
+   * deactivate (e.g. when navigating away from the conversation page).
+   */
+  const setActiveConversationId = useCallback((id: string | null) => {
+    const oldId = currentConversationIdRef.current;
+    if (oldId === id) return;
 
-    return () => clearTimeout(timer);
-  }, [tabs]);
-
-  // 持久化 activeTabId（单独存储，避免切换 tab 时重复序列化大内容）
-  // Persist activeTabId separately to avoid re-serializing large tab content on tab switch
-  useEffect(() => {
-    try {
-      if (activeTabId) {
-        localStorage.setItem(PREVIEW_ACTIVE_TAB_ID_KEY, activeTabId);
-      } else {
-        localStorage.removeItem(PREVIEW_ACTIVE_TAB_ID_KEY);
-      }
-    } catch {
-      // 忽略存储错误 / Ignore storage errors
+    // Persist the outgoing conversation's current snapshot so we can restore
+    // it on a later visit.
+    if (oldId !== null) {
+      perConvStateRef.current.set(oldId, { ...liveStateRef.current });
     }
-  }, [activeTabId]);
+
+    const next = id !== null ? perConvStateRef.current.get(id) ?? DEFAULT_CONVERSATION_STATE : DEFAULT_CONVERSATION_STATE;
+
+    currentConversationIdRef.current = id;
+    setIsOpen(next.isOpen);
+    setTabs(next.tabs);
+    setActiveTabId(next.activeTabId);
+  }, []);
 
   // 追踪是否正在保存（避免与流式更新冲突）/ Track if currently saving (to avoid conflicts with streaming updates)
   const savingFilesRef = useRef<Set<string>>(new Set());
@@ -690,6 +651,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addDomSnippet,
       removeDomSnippet,
       clearDomSnippets,
+      setActiveConversationId,
     };
   }, [
     isOpen,
@@ -710,6 +672,7 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addDomSnippet,
     removeDomSnippet,
     clearDomSnippets,
+    setActiveConversationId,
   ]);
 
   return <PreviewContext.Provider value={previewContextValue}>{children}</PreviewContext.Provider>;
