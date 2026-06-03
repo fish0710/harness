@@ -29,7 +29,7 @@ export const sortSiderItemsByStoredOrder = <T>(params: {
 }): T[] => {
   const { items, storedOrder, getId } = params;
   const orderMap = new Map(storedOrder.map((id, index) => [id, index]));
-  return [...items].sort((a, b) => {
+  return [...items].toSorted((a, b) => {
     const aOrder = orderMap.get(getId(a));
     const bOrder = orderMap.get(getId(b));
     if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder;
