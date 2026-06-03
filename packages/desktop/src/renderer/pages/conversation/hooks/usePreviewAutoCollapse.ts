@@ -41,11 +41,5 @@ export function usePreviewAutoCollapse({
     }
 
     previousPreviewOpenRef.current = isPreviewOpen;
-  }, [
-    isPreviewOpen,
-    isDesktop,
-    rightSiderCollapsed,
-    workspaceEnabled,
-    setRightSiderCollapsed,
-  ]);
+  }, [isPreviewOpen, isDesktop, rightSiderCollapsed, workspaceEnabled, setRightSiderCollapsed]);
 }

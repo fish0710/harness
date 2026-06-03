@@ -143,7 +143,8 @@ export const PreviewProvider: React.FC<{ children: React.ReactNode }> = ({ child
       perConvStateRef.current.set(oldId, { ...liveStateRef.current });
     }
 
-    const next = id !== null ? perConvStateRef.current.get(id) ?? DEFAULT_CONVERSATION_STATE : DEFAULT_CONVERSATION_STATE;
+    const next =
+      id !== null ? (perConvStateRef.current.get(id) ?? DEFAULT_CONVERSATION_STATE) : DEFAULT_CONVERSATION_STATE;
 
     currentConversationIdRef.current = id;
     setIsOpen(next.isOpen);

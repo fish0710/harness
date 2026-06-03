@@ -275,11 +275,7 @@ export function computeContextMenuPosition(
 export function filterHiddenEntries(list: IDirOrFile[]): IDirOrFile[] {
   return list
     .filter((node) => !node.name?.startsWith('.'))
-    .map((node) =>
-      node.isFile || !node.children
-        ? node
-        : { ...node, children: filterHiddenEntries(node.children) }
-    );
+    .map((node) => (node.isFile || !node.children ? node : { ...node, children: filterHiddenEntries(node.children) }));
 }
 
 /**
